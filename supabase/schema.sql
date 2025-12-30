@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS workout_days (
   completed_at TIMESTAMPTZ,
   moved_from_date DATE,
   notes TEXT,
+  activity_type TEXT CHECK (activity_type IS NULL OR activity_type IN ('run', 'walk', 'cycle', 'swim', 'padel', 'squash', 'strength', 'rest')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -203,4 +204,10 @@ $$ LANGUAGE plpgsql;
 -- ============================================
 -- ALTER TABLE workout_days ADD COLUMN IF NOT EXISTS actual_distance_km NUMERIC(5,2);
 -- ALTER TABLE workout_days ADD COLUMN IF NOT EXISTS actual_duration_min INTEGER;
+
+-- ============================================
+-- MIGRATION: Add activity_type column
+-- Run this SQL in Supabase SQL Editor for existing databases
+-- ============================================
+-- ALTER TABLE workout_days ADD COLUMN IF NOT EXISTS activity_type TEXT CHECK (activity_type IS NULL OR activity_type IN ('run', 'walk', 'cycle', 'swim', 'padel', 'squash', 'strength', 'rest'));
 

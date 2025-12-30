@@ -54,14 +54,29 @@ export const workoutService = {
   },
 
   async create(workout: WorkoutDayInput): Promise<WorkoutDay> {
+    // Explicitly map fields to ensure we only send columns that exist in the database
+    const insertData = {
+      date: workout.date,
+      title: workout.title,
+      details: workout.details,
+      phase: workout.phase,
+      week: workout.week,
+      tags: workout.tags,
+      planned_distance_km: workout.planned_distance_km ?? null,
+      planned_duration_min: workout.planned_duration_min ?? null,
+      actual_distance_km: workout.actual_distance_km ?? null,
+      actual_duration_min: workout.actual_duration_min ?? null,
+      intensity: workout.intensity,
+      status: workout.status || 'planned',
+      notes: workout.notes ?? null,
+      activity_type: workout.activity_type ?? null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
     const { data, error } = await supabase
       .from('workout_days')
-      .insert([{
-        ...workout,
-        status: workout.status || 'planned',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }])
+      .insert([insertData])
       .select()
       .single();
 
@@ -71,9 +86,22 @@ export const workoutService = {
 
   async createMany(workouts: WorkoutDayInput[]): Promise<WorkoutDay[]> {
     const now = new Date().toISOString();
+    // Explicitly map fields to ensure we only send columns that exist in the database
     const workoutsWithTimestamps = workouts.map(w => ({
-      ...w,
+      date: w.date,
+      title: w.title,
+      details: w.details,
+      phase: w.phase,
+      week: w.week,
+      tags: w.tags,
+      planned_distance_km: w.planned_distance_km ?? null,
+      planned_duration_min: w.planned_duration_min ?? null,
+      actual_distance_km: w.actual_distance_km ?? null,
+      actual_duration_min: w.actual_duration_min ?? null,
+      intensity: w.intensity,
       status: w.status || 'planned',
+      notes: w.notes ?? null,
+      activity_type: w.activity_type ?? null,
       created_at: now,
       updated_at: now,
     }));
