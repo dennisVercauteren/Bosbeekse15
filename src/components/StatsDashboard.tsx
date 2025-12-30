@@ -3,13 +3,13 @@ import {
   Box,
   Paper,
   Typography,
-  Grid,
   alpha,
   useTheme,
   Collapse,
   IconButton,
   ToggleButton,
   ToggleButtonGroup,
+  Stack,
 } from '@mui/material';
 import {
   XAxis,
@@ -38,8 +38,8 @@ import { activityColors } from '../lib/theme';
 
 type TimeRange = '7d' | '30d' | 'all';
 
-// Simple mini chart component
-function MiniChart({
+// Full-width bar chart for a single metric
+function FullWidthBarChart({
   title,
   icon,
   data,
@@ -54,12 +54,19 @@ function MiniChart({
   dataKey: string;
   color: string;
   unit?: string;
-  domain?: [number, number];
+  domain?: [number | 'auto', number | 'auto'];
 }) {
   const theme = useTheme();
   
+  // Filter out null/undefined/0 values
+  const filteredData = data.filter(d => d[dataKey] !== null && d[dataKey] !== undefined && d[dataKey] !== 0);
+  
   // Get latest value
-  const latestValue = data.length > 0 ? data[data.length - 1]?.[dataKey] : null;
+  const latestValue = filteredData.length > 0 ? filteredData[filteredData.length - 1]?.[dataKey] : null;
+  
+  if (filteredData.length === 0) {
+    return null; // Don't render if no valid data
+  }
   
   return (
     <Paper
@@ -68,64 +75,56 @@ function MiniChart({
         p: 2,
         borderRadius: 2,
         border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-        height: '100%',
+        mb: 2,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
         <Box sx={{ color, display: 'flex' }}>{icon}</Box>
-        <Typography variant="caption" color="text.secondary" fontWeight={500}>
+        <Typography variant="subtitle2" fontWeight={600}>
           {title}
         </Typography>
         {latestValue !== null && (
-          <Typography variant="caption" sx={{ ml: 'auto', fontWeight: 600, color }}>
+          <Typography variant="body2" sx={{ ml: 'auto', fontWeight: 700, color }}>
             {latestValue}{unit}
           </Typography>
         )}
       </Box>
-      <Box sx={{ height: 80 }}>
-        {data.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-              <XAxis 
-                dataKey="date" 
-                tick={false}
-                axisLine={false}
-              />
-              <YAxis 
-                domain={domain || ['auto', 'auto']}
-                tick={false}
-                axisLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: theme.palette.background.paper,
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-                formatter={(value: number) => [`${value}${unit || ''}`, title]}
-                labelFormatter={(label) => label}
-              />
-              <Bar 
-                dataKey={dataKey} 
-                fill={color} 
-                radius={[2, 2, 0, 0]}
-                maxBarSize={20}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <Box sx={{ 
-            height: '100%', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center' 
-          }}>
-            <Typography variant="caption" color="text.secondary">
-              No data yet
-            </Typography>
-          </Box>
-        )}
+      <Box sx={{ height: 120, width: '100%' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={filteredData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.3)} vertical={false} />
+            <XAxis 
+              dataKey="date" 
+              tick={{ fontSize: 10, fill: theme.palette.text.secondary }}
+              axisLine={{ stroke: theme.palette.divider }}
+              tickLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis 
+              domain={domain || ['auto', 'auto']}
+              tick={{ fontSize: 10, fill: theme.palette.text.secondary }}
+              axisLine={false}
+              tickLine={false}
+              width={35}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: theme.palette.background.paper,
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: 8,
+                fontSize: 12,
+              }}
+              formatter={(value: number) => [`${value}${unit || ''}`, title]}
+              labelFormatter={(label) => label}
+            />
+            <Bar 
+              dataKey={dataKey} 
+              fill={color} 
+              radius={[4, 4, 0, 0]}
+              maxBarSize={40}
+            />
+          </BarChart>
+        </ResponsiveContainer>
       </Box>
     </Paper>
   );
@@ -142,9 +141,10 @@ function DistanceChart({ data }: { data: any[] }) {
         p: 2,
         borderRadius: 2,
         border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        mb: 2,
       }}
     >
-      <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ mb: 1, display: 'block' }}>
+      <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
         Distance by Activity (km)
       </Typography>
       <Box sx={{ height: 150 }}>
@@ -200,12 +200,13 @@ function WeeklyDistanceChart({ data }: { data: any[] }) {
         p: 2,
         borderRadius: 2,
         border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        mb: 2,
       }}
     >
-      <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ mb: 1, display: 'block' }}>
+      <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
         Weekly Distance Trend (km)
       </Typography>
-      <Box sx={{ height: 150 }}>
+      <Box sx={{ height: 180 }}>
         {data.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
@@ -407,7 +408,7 @@ export default function StatsDashboard() {
       <Collapse in={expanded}>
         <Box sx={{ p: 2 }}>
           {/* Time range selector */}
-          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
             <ToggleButtonGroup
               value={timeRange}
               exclusive
@@ -420,109 +421,97 @@ export default function StatsDashboard() {
             </ToggleButtonGroup>
           </Box>
           
-          {/* Check-in metrics */}
+          {/* Check-in metrics - Full width bar charts */}
           {hasCheckInData && (
             <>
-              <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
+              <Typography variant="overline" color="text.secondary" fontWeight={600} sx={{ mb: 2, display: 'block' }}>
                 DAILY CHECK-INS
               </Typography>
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={6} sm={4} md={2.4}>
-                  <MiniChart
-                    title="Weight"
-                    icon={<MonitorWeightIcon fontSize="small" />}
-                    data={checkInData.filter(d => d.weight !== null)}
-                    dataKey="weight"
-                    color={activityColors.run}
-                    unit=" kg"
-                  />
-                </Grid>
-                <Grid item xs={6} sm={4} md={2.4}>
-                  <MiniChart
-                    title="Sleep"
-                    icon={<BedtimeIcon fontSize="small" />}
-                    data={checkInData.filter(d => d.sleep !== null)}
-                    dataKey="sleep"
-                    color="#8b5cf6"
-                    unit="h"
-                    domain={[0, 12]}
-                  />
-                </Grid>
-                <Grid item xs={6} sm={4} md={2.4}>
-                  <MiniChart
-                    title="Steps (k)"
-                    icon={<DirectionsWalkIcon fontSize="small" />}
-                    data={checkInData.filter(d => d.steps !== null)}
-                    dataKey="steps"
-                    color={activityColors.walk}
-                    unit="k"
-                  />
-                </Grid>
-                <Grid item xs={6} sm={4} md={2.4}>
-                  <MiniChart
-                    title="Energy"
-                    icon={<BoltIcon fontSize="small" />}
-                    data={checkInData.filter(d => d.energy !== null)}
-                    dataKey="energy"
-                    color="#eab308"
-                    unit="/10"
-                    domain={[0, 10]}
-                  />
-                </Grid>
-                <Grid item xs={6} sm={4} md={2.4}>
-                  <MiniChart
-                    title="Pain"
-                    icon={<HealingIcon fontSize="small" />}
-                    data={checkInData.filter(d => d.pain !== null)}
-                    dataKey="pain"
-                    color="#ef4444"
-                    unit="/10"
-                    domain={[0, 10]}
-                  />
-                </Grid>
-              </Grid>
+              
+              <FullWidthBarChart
+                title="Weight"
+                icon={<MonitorWeightIcon fontSize="small" />}
+                data={checkInData}
+                dataKey="weight"
+                color={activityColors.run}
+                unit=" kg"
+              />
+              
+              <FullWidthBarChart
+                title="Sleep"
+                icon={<BedtimeIcon fontSize="small" />}
+                data={checkInData}
+                dataKey="sleep"
+                color="#8b5cf6"
+                unit=" h"
+                domain={[0, 12]}
+              />
+              
+              <FullWidthBarChart
+                title="Steps (thousands)"
+                icon={<DirectionsWalkIcon fontSize="small" />}
+                data={checkInData}
+                dataKey="steps"
+                color={activityColors.walk}
+                unit="k"
+              />
+              
+              <FullWidthBarChart
+                title="Energy Level"
+                icon={<BoltIcon fontSize="small" />}
+                data={checkInData}
+                dataKey="energy"
+                color="#eab308"
+                unit="/10"
+                domain={[0, 10]}
+              />
+              
+              <FullWidthBarChart
+                title="Pain Level"
+                icon={<HealingIcon fontSize="small" />}
+                data={checkInData}
+                dataKey="pain"
+                color="#ef4444"
+                unit="/10"
+                domain={[0, 10]}
+              />
             </>
           )}
           
           {/* Activity distance charts */}
-          <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
+          <Typography variant="overline" color="text.secondary" fontWeight={600} sx={{ mb: 2, mt: 3, display: 'block' }}>
             ACTIVITY DISTANCE
           </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <DistanceChart data={distanceByActivity} />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <WeeklyDistanceChart data={weeklyDistanceData} />
-            </Grid>
-          </Grid>
+          
+          <DistanceChart data={distanceByActivity} />
+          <WeeklyDistanceChart data={weeklyDistanceData} />
           
           {/* Summary stats */}
-          <Box sx={{ mt: 2, display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+          <Stack direction="row" spacing={3} sx={{ mt: 2, flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <DirectionsRunIcon sx={{ color: activityColors.run, fontSize: 18 }} />
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="body2" color="text.secondary">
                 Running: <strong>{distanceByActivity.find(d => d.name === 'Running')?.distance.toFixed(1) || 0} km</strong>
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <DirectionsWalkIcon sx={{ color: activityColors.walk, fontSize: 18 }} />
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="body2" color="text.secondary">
                 Walking: <strong>{distanceByActivity.find(d => d.name === 'Walking')?.distance.toFixed(1) || 0} km</strong>
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <DirectionsBikeIcon sx={{ color: activityColors.cycle, fontSize: 18 }} />
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="body2" color="text.secondary">
                 Cycling: <strong>{distanceByActivity.find(d => d.name === 'Cycling')?.distance.toFixed(1) || 0} km</strong>
               </Typography>
             </Box>
             <Box>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="body2" color="text.secondary">
                 Total: <strong>{totalDistance.toFixed(1)} km</strong>
               </Typography>
             </Box>
-          </Box>
+          </Stack>
           
           {!hasCheckInData && !hasWorkoutData && (
             <Box sx={{ textAlign: 'center', py: 3 }}>
@@ -536,4 +525,3 @@ export default function StatsDashboard() {
     </Paper>
   );
 }
-

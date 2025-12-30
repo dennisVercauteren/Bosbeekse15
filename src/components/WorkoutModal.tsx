@@ -54,6 +54,9 @@ export default function WorkoutModal() {
     distance: '',
     notes: '',
   });
+  
+  // Check if user can edit (requires authentication)
+  const canEdit = state.authenticated;
 
   const workout = useMemo(() => {
     if (!state.selectedDate) return null;
@@ -235,33 +238,46 @@ export default function WorkoutModal() {
               )}
             </Box>
 
-            {/* Quick Move Buttons */}
-            <Box>
-              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
-                Move Activity
-              </Typography>
-              <ButtonGroup size="small" variant="outlined" fullWidth>
-                <Button onClick={() => handleQuickMove(-3)}>-3</Button>
-                <Button onClick={() => handleQuickMove(-2)}>-2</Button>
-                <Button onClick={() => handleQuickMove(-1)}>-1</Button>
-                <Button onClick={() => handleQuickMove(1)}>+1</Button>
-                <Button onClick={() => handleQuickMove(2)}>+2</Button>
-                <Button onClick={() => handleQuickMove(3)}>+3</Button>
-              </ButtonGroup>
-            </Box>
+            {/* Quick Move Buttons - Only show if user can edit */}
+            {canEdit && (
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+                  Move Activity
+                </Typography>
+                <ButtonGroup size="small" variant="outlined" fullWidth>
+                  <Button onClick={() => handleQuickMove(-3)}>-3</Button>
+                  <Button onClick={() => handleQuickMove(-2)}>-2</Button>
+                  <Button onClick={() => handleQuickMove(-1)}>-1</Button>
+                  <Button onClick={() => handleQuickMove(1)}>+1</Button>
+                  <Button onClick={() => handleQuickMove(2)}>+2</Button>
+                  <Button onClick={() => handleQuickMove(3)}>+3</Button>
+                </ButtonGroup>
+              </Box>
+            )}
 
-            {/* Notes */}
+            {/* Notes - Editable only if authenticated */}
             <Box>
-              <TextField
-                fullWidth
-                multiline
-                rows={2}
-                size="small"
-                label="Notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                onBlur={handleSaveNotes}
-              />
+              {canEdit ? (
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={2}
+                  size="small"
+                  label="Notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  onBlur={handleSaveNotes}
+                />
+              ) : workout.notes && (
+                <Box>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                    Notes
+                  </Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {workout.notes}
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Box>
         ) : (
@@ -271,14 +287,16 @@ export default function WorkoutModal() {
                 <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
                   {isRest ? 'Rest day scheduled' : 'No activity scheduled'}
                 </Typography>
-                <Button
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  onClick={() => setShowAddActivity(true)}
-                  sx={{ borderColor: theme.palette.primary.main, color: theme.palette.primary.main }}
-                >
-                  Add Activity
-                </Button>
+                {canEdit && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => setShowAddActivity(true)}
+                    sx={{ borderColor: theme.palette.primary.main, color: theme.palette.primary.main }}
+                  >
+                    Add Activity
+                  </Button>
+                )}
               </Box>
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -373,7 +391,7 @@ export default function WorkoutModal() {
         )}
       </DialogContent>
 
-      {workout && !isRest && (
+      {workout && !isRest && canEdit && (
         <>
           <Divider sx={{ borderColor: theme.palette.divider }} />
           <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>

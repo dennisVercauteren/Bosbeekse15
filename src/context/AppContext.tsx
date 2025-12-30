@@ -11,13 +11,16 @@ interface AppState {
   loading: boolean;
   error: string | null;
   initialized: boolean;
-  authenticated: boolean;
+  authenticated: boolean; // True if logged in and can edit
   filters: FilterOptions;
   settings: AppSettings;
   undoStack: UndoAction[];
   selectedDate: string | null;
   modalOpen: boolean;
 }
+
+// Check if user can edit (requires authentication)
+export const canEdit = (authenticated: boolean): boolean => authenticated;
 
 // Action types
 type AppAction =
@@ -37,14 +40,14 @@ type AppAction =
   | { type: 'SET_SELECTED_DATE'; payload: string | null }
   | { type: 'SET_MODAL_OPEN'; payload: boolean };
 
-// Initial state
+// Initial state - app is viewable by everyone, editing requires authentication
 const initialState: AppState = {
   workouts: [],
   checkIns: [],
   loading: true,
   error: null,
   initialized: false,
-  authenticated: false, // Start unauthenticated, check passcode on load
+  authenticated: false, // Editing requires authentication
   filters: {
     status: 'all',
     intensity: 'all',

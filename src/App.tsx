@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ThemeProvider, CssBaseline, Box, Container, Typography, Link, alpha, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip, useTheme } from '@mui/material';
+import { ThemeProvider, CssBaseline, Box, Container, Typography, Link, alpha, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip, useTheme, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Alert } from '@mui/material';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import MapIcon from '@mui/icons-material/Map';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -7,28 +7,38 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DownloadIcon from '@mui/icons-material/Download';
+import LoginIcon from '@mui/icons-material/Login';
+import LockIcon from '@mui/icons-material/Lock';
 import { AppProvider, useApp } from './context/AppContext';
 import { createAppTheme } from './lib/theme';
 import Calendar from './components/Calendar';
 import WorkoutModal from './components/WorkoutModal';
 import FilterBar from './components/FilterBar';
-import LoginScreen from './components/LoginScreen';
 import InitializePlan from './components/InitializePlan';
 import CheckInForm from './components/CheckInForm';
 import StatsDashboard from './components/StatsDashboard';
 import { generateICalFile, downloadFile } from './lib/utils';
 
 function AppContent() {
-  const { state, dispatch, logout } = useApp();
+  const { state, dispatch, logout, login } = useApp();
   const theme = useTheme();
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [passcode, setPasscode] = useState('');
+  const [loginError, setLoginError] = useState(false);
 
-  if (!state.authenticated) {
-    return <LoginScreen />;
+  // Show initialize plan if no workouts (but only for authenticated users)
+  if (state.workouts.length === 0 && state.authenticated) {
+    return <InitializePlan />;
   }
 
-  if (state.workouts.length === 0) {
-    return <InitializePlan />;
+  // Show loading state while workouts are being loaded
+  if (state.loading && state.workouts.length === 0) {
+    return (
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'background.default' }}>
+        <Typography color="text.secondary">Loading...</Typography>
+      </Box>
+    );
   }
   
   // Calculate days until race
@@ -39,7 +49,7 @@ function AppContent() {
   // Calculate progress
   const completedWorkouts = state.workouts.filter(w => w.status === 'completed' && w.intensity !== 'Rest').length;
   const totalWorkouts = state.workouts.filter(w => w.intensity !== 'Rest').length;
-  const progress = Math.round((completedWorkouts / totalWorkouts) * 100);
+  const progress = totalWorkouts > 0 ? Math.round((completedWorkouts / totalWorkouts) * 100) : 0;
 
   const handleDarkModeToggle = () => {
     dispatch({ type: 'SET_SETTINGS', payload: { darkMode: !state.settings.darkMode } });
@@ -55,6 +65,22 @@ function AppContent() {
     setMenuAnchor(null);
     const json = JSON.stringify(state.workouts, null, 2);
     downloadFile(json, 'bosbeekse15-backup.json', 'application/json');
+  };
+
+  const handleLogin = () => {
+    if (login(passcode)) {
+      setLoginDialogOpen(false);
+      setPasscode('');
+      setLoginError(false);
+    } else {
+      setLoginError(true);
+    }
+  };
+
+  const handleLoginKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleLogin();
+    }
   };
 
   return (
@@ -115,6 +141,15 @@ function AppContent() {
                 View Route
               </Link>
 
+              {/* Login button when not authenticated */}
+              {!state.authenticated && (
+                <Tooltip title="Login to edit">
+                  <IconButton onClick={() => setLoginDialogOpen(true)} size="small">
+                    <LoginIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+
               {/* Dark mode toggle */}
               <Tooltip title={state.settings.darkMode ? 'Light mode' : 'Dark mode'}>
                 <IconButton onClick={handleDarkModeToggle} size="small">
@@ -139,11 +174,15 @@ function AppContent() {
                   <ListItemIcon><DownloadIcon fontSize="small" /></ListItemIcon>
                   <ListItemText>Export calendar (iCal)</ListItemText>
                 </MenuItem>
-                <Divider />
-                <MenuItem onClick={logout}>
-                  <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
-                  <ListItemText>Logout</ListItemText>
-                </MenuItem>
+                {state.authenticated && (
+                  <>
+                    <Divider />
+                    <MenuItem onClick={logout}>
+                      <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+                      <ListItemText>Logout</ListItemText>
+                    </MenuItem>
+                  </>
+                )}
               </Menu>
             </Box>
           </Box>
@@ -152,6 +191,22 @@ function AppContent() {
 
       {/* Main Content */}
       <Container maxWidth="lg" sx={{ py: 3 }}>
+        {/* View-only notice for non-authenticated users */}
+        {!state.authenticated && state.workouts.length > 0 && (
+          <Alert 
+            severity="info" 
+            icon={<LockIcon />}
+            action={
+              <Button color="inherit" size="small" onClick={() => setLoginDialogOpen(true)}>
+                Login
+              </Button>
+            }
+            sx={{ mb: 3 }}
+          >
+            You're viewing in read-only mode. Login to make changes.
+          </Alert>
+        )}
+
         {/* Stats Cards */}
         <Box
           sx={{
@@ -181,8 +236,8 @@ function AppContent() {
           />
         </Box>
 
-        {/* Daily Check-In */}
-        <CheckInForm />
+        {/* Daily Check-In - Only for authenticated users */}
+        {state.authenticated && <CheckInForm />}
         
         {/* Stats Dashboard */}
         <StatsDashboard />
@@ -196,8 +251,43 @@ function AppContent() {
         <Calendar />
       </Container>
 
-      {/* Modal */}
+      {/* Workout Modal */}
       <WorkoutModal />
+
+      {/* Login Dialog */}
+      <Dialog 
+        open={loginDialogOpen} 
+        onClose={() => { setLoginDialogOpen(false); setLoginError(false); setPasscode(''); }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ textAlign: 'center', pt: 3 }}>
+          <LockIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+          <Typography variant="h6">Login to Edit</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            type="password"
+            label="Passcode"
+            value={passcode}
+            onChange={(e) => { setPasscode(e.target.value); setLoginError(false); }}
+            onKeyPress={handleLoginKeyPress}
+            error={loginError}
+            helperText={loginError ? 'Incorrect passcode' : ''}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => { setLoginDialogOpen(false); setLoginError(false); setPasscode(''); }}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={handleLogin}>
+            Login
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
