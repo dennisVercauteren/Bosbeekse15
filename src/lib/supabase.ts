@@ -244,12 +244,22 @@ export const checkInService = {
   },
 
   async upsert(checkIn: CheckInInput): Promise<CheckIn> {
+    // Explicitly map fields to avoid passing invalid IDs or extra fields
+    const upsertData = {
+      date: checkIn.date,
+      weight_kg: checkIn.weight_kg ?? null,
+      sleep_hours: checkIn.sleep_hours ?? null,
+      steps: checkIn.steps ?? null,
+      energy_1_10: checkIn.energy_1_10 ?? null,
+      pain_0_10: checkIn.pain_0_10 ?? null,
+      pain_location: checkIn.pain_location ?? null,
+      notes: checkIn.notes ?? null,
+      updated_at: new Date().toISOString(),
+    };
+
     const { data, error } = await supabase
       .from('checkins')
-      .upsert({
-        ...checkIn,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'date' })
+      .upsert(upsertData, { onConflict: 'date' })
       .select()
       .single();
 
