@@ -26,7 +26,7 @@ import { format } from 'date-fns';
 export default function CheckInForm() {
   const { state, saveCheckIn } = useApp();
   const theme = useTheme();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [saving, setSaving] = useState(false);
   
   const today = format(new Date(), 'yyyy-MM-dd');

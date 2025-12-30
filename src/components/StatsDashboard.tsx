@@ -294,7 +294,7 @@ function WeeklyDistanceChart({ data }: { data: WeeklyDistanceData[] }) {
 export default function StatsDashboard() {
   const { state } = useApp();
   const theme = useTheme();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   
   // Filter check-ins by time range

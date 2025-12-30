@@ -212,7 +212,7 @@ function AppContent() {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: '340px 1fr' },
+            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
             gap: 3,
             alignItems: 'start',
           }}
@@ -223,15 +223,13 @@ function AppContent() {
               display: 'flex',
               flexDirection: 'column',
               gap: 3,
-              position: { lg: 'sticky' },
-              top: { lg: 80 },
             }}
           >
             {/* Stats Cards */}
             <Box
               sx={{
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr 1fr', lg: '1fr 1fr' },
+                gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)', lg: '1fr 1fr' },
                 gap: 2,
               }}
             >
