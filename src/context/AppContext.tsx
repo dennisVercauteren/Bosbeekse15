@@ -131,6 +131,7 @@ interface AppContextType {
   initializePlan: () => Promise<void>;
   createWorkout: (workout: Omit<WorkoutDay, 'id' | 'created_at' | 'updated_at'>) => Promise<WorkoutDay>;
   updateWorkout: (id: string, updates: Partial<WorkoutDay>) => Promise<void>;
+  deleteWorkout: (id: string) => Promise<void>;
   moveWorkout: (workoutId: string, newDate: string) => Promise<void>;
   markWorkoutStatus: (id: string, status: WorkoutDay['status']) => Promise<void>;
   undo: () => Promise<void>;
@@ -319,6 +320,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [isDemo]);
 
+  // Delete workout
+  const deleteWorkout = useCallback(async (id: string) => {
+    try {
+      if (isDemo) {
+        const workouts = getDemoWorkouts();
+        const filtered = workouts.filter(w => w.id !== id);
+        saveDemoWorkouts(filtered);
+      } else {
+        await workoutService.delete(id);
+      }
+      
+      dispatch({ type: 'DELETE_WORKOUT', payload: id });
+    } catch (error) {
+      console.error('Failed to delete workout:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete workout' });
+      throw error;
+    }
+  }, [isDemo]);
+
   // Move workout to new date
   const moveWorkout = useCallback(async (workoutId: string, newDate: string) => {
     const workout = state.workouts.find(w => w.id === workoutId);
@@ -340,11 +360,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       if (isDemo) {
         const workouts = getDemoWorkouts();
-        // Check if target date has a non-rest workout (rest days can be overwritten)
-        const existing = workouts.find(w => w.date === newDate && w.intensity !== 'Rest');
-        if (existing) {
-          throw new Error(`There's already a workout scheduled for ${newDate}`);
-        }
+        // Multiple activities per day are now allowed
         
         // Find and update the workout
         const workoutIndex = workouts.findIndex(w => w.id === workoutId);
@@ -560,6 +576,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     initializePlan,
     createWorkout,
     updateWorkout,
+    deleteWorkout,
     moveWorkout,
     markWorkoutStatus,
     undo,

@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================
 CREATE TABLE IF NOT EXISTS workout_days (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  date DATE NOT NULL UNIQUE,
+  date DATE NOT NULL,
   title TEXT NOT NULL,
   details TEXT NOT NULL,
   phase TEXT NOT NULL,
@@ -210,4 +210,10 @@ $$ LANGUAGE plpgsql;
 -- Run this SQL in Supabase SQL Editor for existing databases
 -- ============================================
 -- ALTER TABLE workout_days ADD COLUMN IF NOT EXISTS activity_type TEXT CHECK (activity_type IS NULL OR activity_type IN ('run', 'walk', 'cycle', 'swim', 'padel', 'squash', 'strength', 'rest'));
+
+-- ============================================
+-- MIGRATION: Remove UNIQUE constraint on date to allow multiple activities per day
+-- Run this SQL in Supabase SQL Editor for existing databases
+-- ============================================
+-- ALTER TABLE workout_days DROP CONSTRAINT IF EXISTS workout_days_date_key;
 

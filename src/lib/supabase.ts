@@ -146,12 +146,7 @@ export const workoutService = {
   },
 
   async moveWorkout(workoutId: string, newDate: string, oldDate: string): Promise<WorkoutDay> {
-    // First check if there's already a workout on the target date
-    const existing = await this.getByDate(newDate);
-    if (existing) {
-      throw new Error(`There's already a workout scheduled for ${newDate}`);
-    }
-
+    // Multiple activities per day are now allowed, so no conflict check needed
     const { data, error } = await supabase
       .from('workout_days')
       .update({
