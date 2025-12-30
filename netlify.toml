@@ -2,6 +2,10 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  # Skip secret scanning for these keys - they are meant to be public in Vite builds
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_APP_PASSCODE"
+
 # SPA routing - redirect all routes to index.html
 [[redirects]]
   from = "/*"
