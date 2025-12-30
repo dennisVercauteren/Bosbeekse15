@@ -74,7 +74,6 @@ function WorkoutCard({
   onDragStart: (e: React.DragEvent, workout: WorkoutDay) => void;
   isDragging: boolean;
 }) {
-  const theme = useTheme();
   const isCompleted = workout.status === 'completed';
   const isSkipped = workout.status === 'skipped';
   const isRescheduled = workout.status === 'rescheduled';
