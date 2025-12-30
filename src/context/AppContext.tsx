@@ -37,14 +37,14 @@ type AppAction =
   | { type: 'SET_SELECTED_DATE'; payload: string | null }
   | { type: 'SET_MODAL_OPEN'; payload: boolean };
 
-// Initial state - auto-authenticate in development
+// Initial state
 const initialState: AppState = {
   workouts: [],
   checkIns: [],
   loading: true,
   error: null,
   initialized: false,
-  authenticated: true, // Auto-authenticate for development
+  authenticated: false, // Start unauthenticated, check passcode on load
   filters: {
     status: 'all',
     intensity: 'all',

@@ -1,6 +1,12 @@
-import { ThemeProvider, CssBaseline, Box, Container, Typography, Link, alpha } from '@mui/material';
+import { useState } from 'react';
+import { ThemeProvider, CssBaseline, Box, Container, Typography, Link, alpha, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip } from '@mui/material';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import MapIcon from '@mui/icons-material/Map';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import LogoutIcon from '@mui/icons-material/Logout';
+import DownloadIcon from '@mui/icons-material/Download';
 import { AppProvider, useApp } from './context/AppContext';
 import { createAppTheme } from './lib/theme';
 import Calendar from './components/Calendar';
@@ -8,9 +14,11 @@ import WorkoutModal from './components/WorkoutModal';
 import FilterBar from './components/FilterBar';
 import LoginScreen from './components/LoginScreen';
 import InitializePlan from './components/InitializePlan';
+import { generateICalFile, downloadFile } from './lib/utils';
 
 function AppContent() {
-  const { state } = useApp();
+  const { state, dispatch, logout } = useApp();
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   if (!state.authenticated) {
     return <LoginScreen />;
@@ -29,6 +37,22 @@ function AppContent() {
   const completedWorkouts = state.workouts.filter(w => w.status === 'completed' && w.intensity !== 'Rest').length;
   const totalWorkouts = state.workouts.filter(w => w.intensity !== 'Rest').length;
   const progress = Math.round((completedWorkouts / totalWorkouts) * 100);
+
+  const handleDarkModeToggle = () => {
+    dispatch({ type: 'SET_SETTINGS', payload: { darkMode: !state.settings.darkMode } });
+  };
+
+  const handleExportICal = () => {
+    setMenuAnchor(null);
+    const ical = generateICalFile(state.workouts);
+    downloadFile(ical, 'bosbeekse15-training.ics', 'text/calendar');
+  };
+
+  const handleExportJSON = () => {
+    setMenuAnchor(null);
+    const json = JSON.stringify(state.workouts, null, 2);
+    downloadFile(json, 'bosbeekse15-backup.json', 'application/json');
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
@@ -68,24 +92,57 @@ function AppContent() {
               </Box>
             </Box>
             
-            {/* Route link */}
-            <Link
-              href="https://www.komoot.com/tour/2731338257"
-              target="_blank"
-              rel="noopener"
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                color: 'text.secondary',
-                textDecoration: 'none',
-                fontSize: '0.8rem',
-                '&:hover': { color: '#22c55e' },
-              }}
-            >
-              <MapIcon sx={{ fontSize: 16 }} />
-              View Route
-            </Link>
+            {/* Right side: Route link + Settings */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Link
+                href="https://www.komoot.com/tour/2731338257"
+                target="_blank"
+                rel="noopener"
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  color: 'text.secondary',
+                  textDecoration: 'none',
+                  fontSize: '0.8rem',
+                  '&:hover': { color: '#22c55e' },
+                }}
+              >
+                <MapIcon sx={{ fontSize: 16 }} />
+                View Route
+              </Link>
+
+              {/* Dark mode toggle */}
+              <Tooltip title={state.settings.darkMode ? 'Light mode' : 'Dark mode'}>
+                <IconButton onClick={handleDarkModeToggle} size="small">
+                  {state.settings.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+                </IconButton>
+              </Tooltip>
+
+              {/* Settings menu */}
+              <IconButton onClick={(e) => setMenuAnchor(e.currentTarget)} size="small">
+                <MoreVertIcon />
+              </IconButton>
+              <Menu
+                anchorEl={menuAnchor}
+                open={Boolean(menuAnchor)}
+                onClose={() => setMenuAnchor(null)}
+              >
+                <MenuItem onClick={handleExportJSON}>
+                  <ListItemIcon><DownloadIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText>Export backup (JSON)</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={handleExportICal}>
+                  <ListItemIcon><DownloadIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText>Export calendar (iCal)</ListItemText>
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={logout}>
+                  <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText>Logout</ListItemText>
+                </MenuItem>
+              </Menu>
+            </Box>
           </Box>
         </Container>
       </Box>
