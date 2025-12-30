@@ -151,6 +151,7 @@ function DayCell({
   onClick,
   onDragStart,
   onDragOver,
+  onDragLeave,
   onDrop,
   isDragTarget,
   isDraggingWorkout,
@@ -161,7 +162,8 @@ function DayCell({
   isToday: boolean;
   onClick: (date: string) => void;
   onDragStart: (e: React.DragEvent, workout: WorkoutDay) => void;
-  onDragOver: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent, date: string) => void;
+  onDragLeave: () => void;
   onDrop: (e: React.DragEvent, date: string) => void;
   isDragTarget: boolean;
   isDraggingWorkout: WorkoutDay | null;
@@ -174,7 +176,8 @@ function DayCell({
   
   return (
     <Box
-      onDragOver={onDragOver}
+      onDragOver={(e) => onDragOver(e, dateStr)}
+      onDragLeave={onDragLeave}
       onDrop={(e) => onDrop(e, dateStr)}
       onClick={() => onClick(dateStr)}
       sx={{
@@ -233,6 +236,7 @@ function MonthCalendar({
   onDayClick,
   onDragStart,
   onDragOver,
+  onDragLeave,
   onDrop,
   dragTargetDate,
   isDraggingWorkout,
@@ -241,7 +245,8 @@ function MonthCalendar({
   workouts: WorkoutDay[];
   onDayClick: (date: string) => void;
   onDragStart: (e: React.DragEvent, workout: WorkoutDay) => void;
-  onDragOver: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent, date: string) => void;
+  onDragLeave: () => void;
   onDrop: (e: React.DragEvent, date: string) => void;
   dragTargetDate: string | null;
   isDraggingWorkout: WorkoutDay | null;
@@ -331,6 +336,7 @@ function MonthCalendar({
                 onClick={onDayClick}
                 onDragStart={onDragStart}
                 onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
                 onDrop={onDrop}
                 isDragTarget={dragTargetDate === format(date, 'yyyy-MM-dd')}
                 isDraggingWorkout={isDraggingWorkout}
@@ -389,9 +395,17 @@ export default function Calendar() {
     e.dataTransfer.effectAllowed = 'move';
   };
   
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, date: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    // Update visual feedback for drop target
+    if (dragTargetDate !== date) {
+      setDragTargetDate(date);
+    }
+  };
+  
+  const handleDragLeave = () => {
+    setDragTargetDate(null);
   };
   
   const handleDrop = async (e: React.DragEvent, date: string) => {
@@ -425,6 +439,7 @@ export default function Calendar() {
           onDayClick={handleDayClick}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           dragTargetDate={dragTargetDate}
           isDraggingWorkout={draggingWorkout}

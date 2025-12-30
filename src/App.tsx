@@ -18,6 +18,7 @@ import InitializePlan from './components/InitializePlan';
 import CheckInForm from './components/CheckInForm';
 import StatsDashboard from './components/StatsDashboard';
 import { generateICalFile, downloadFile } from './lib/utils';
+import type { WorkoutDay } from './types';
 
 function AppContent() {
   const { state, dispatch, logout, login } = useApp();
@@ -77,7 +78,7 @@ function AppContent() {
     }
   };
 
-  const handleLoginKeyPress = (e: React.KeyboardEvent) => {
+  const handleLoginKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleLogin();
     }
@@ -273,7 +274,7 @@ function AppContent() {
             label="Passcode"
             value={passcode}
             onChange={(e) => { setPasscode(e.target.value); setLoginError(false); }}
-            onKeyPress={handleLoginKeyPress}
+            onKeyDown={handleLoginKeyDown}
             error={loginError}
             helperText={loginError ? 'Incorrect passcode' : ''}
             sx={{ mt: 1 }}
@@ -322,7 +323,7 @@ function StatCard({ label, value, suffix = '' }: { label: string; value: number 
 }
 
 // Helper to count this week's remaining workouts
-function getThisWeekWorkouts(workouts: any[]): number {
+function getThisWeekWorkouts(workouts: WorkoutDay[]): number {
   const today = new Date();
   const weekStart = new Date(today);
   weekStart.setDate(today.getDate() - today.getDay() + 1); // Monday

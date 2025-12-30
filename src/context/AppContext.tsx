@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
 import type { WorkoutDay, CheckIn, FilterOptions, UndoAction, AppSettings } from '../types';
 import { workoutService, checkInService, isSupabaseConfigured } from '../lib/supabase';
@@ -19,15 +20,13 @@ interface AppState {
   modalOpen: boolean;
 }
 
-// Check if user can edit (requires authentication)
-export const canEdit = (authenticated: boolean): boolean => authenticated;
-
 // Action types
 type AppAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_WORKOUTS'; payload: WorkoutDay[] }
   | { type: 'ADD_WORKOUT'; payload: WorkoutDay }
+  | { type: 'DELETE_WORKOUT'; payload: string }
   | { type: 'UPDATE_WORKOUT'; payload: WorkoutDay }
   | { type: 'SET_CHECKINS'; payload: CheckIn[] }
   | { type: 'UPDATE_CHECKIN'; payload: CheckIn }
@@ -75,6 +74,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, workouts: action.payload };
     case 'ADD_WORKOUT':
       return { ...state, workouts: [...state.workouts, action.payload] };
+    case 'DELETE_WORKOUT':
+      return { ...state, workouts: state.workouts.filter(w => w.id !== action.payload) };
     case 'UPDATE_WORKOUT':
       return {
         ...state,
@@ -84,7 +85,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       };
     case 'SET_CHECKINS':
       return { ...state, checkIns: action.payload };
-    case 'UPDATE_CHECKIN':
+    case 'UPDATE_CHECKIN': {
       const existingIndex = state.checkIns.findIndex(c => c.date === action.payload.date);
       if (existingIndex >= 0) {
         const newCheckIns = [...state.checkIns];
@@ -92,18 +93,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
         return { ...state, checkIns: newCheckIns };
       }
       return { ...state, checkIns: [...state.checkIns, action.payload] };
+    }
     case 'SET_INITIALIZED':
       return { ...state, initialized: action.payload };
     case 'SET_AUTHENTICATED':
       return { ...state, authenticated: action.payload };
     case 'SET_FILTERS':
       return { ...state, filters: { ...state.filters, ...action.payload } };
-    case 'SET_SETTINGS':
+    case 'SET_SETTINGS': {
       const newSettings = { ...state.settings, ...action.payload };
       if ('darkMode' in action.payload) {
         setStoredValue(STORAGE_KEYS.DARK_MODE, newSettings.darkMode);
       }
       return { ...state, settings: newSettings };
+    }
     case 'PUSH_UNDO':
       return { ...state, undoStack: [action.payload, ...state.undoStack.slice(0, 9)] };
     case 'POP_UNDO':
@@ -231,29 +234,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [isDemo]);
 
   // Create a new workout (for custom activities)
+  // If there's a Rest Day on the same date, it will be replaced
   const createWorkout = useCallback(async (workoutData: Omit<WorkoutDay, 'id' | 'created_at' | 'updated_at'>): Promise<WorkoutDay> => {
     try {
       const now = new Date().toISOString();
       let newWorkout: WorkoutDay;
+      let removedRestDayId: string | null = null;
       
       if (isDemo) {
         // Generate a unique ID for demo mode
         newWorkout = {
           ...workoutData,
-          id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
           created_at: now,
           updated_at: now,
         } as WorkoutDay;
         
-        // Get existing workouts and add the new one
+        // Get existing workouts
         const workouts = getDemoWorkouts();
+        
+        // Find and remove any Rest Day on the same date
+        const restDayIndex = workouts.findIndex(
+          w => w.date === workoutData.date && w.intensity === 'Rest'
+        );
+        if (restDayIndex >= 0) {
+          removedRestDayId = workouts[restDayIndex].id;
+          workouts.splice(restDayIndex, 1);
+        }
+        
+        // Add the new workout
         workouts.push(newWorkout);
         saveDemoWorkouts(workouts);
       } else {
-        // For Supabase, let the database generate the UUID
+        // For Supabase, first check if there's a Rest Day to remove
+        const existingRestDay = state.workouts.find(
+          w => w.date === workoutData.date && w.intensity === 'Rest'
+        );
+        if (existingRestDay) {
+          await workoutService.delete(existingRestDay.id);
+          removedRestDayId = existingRestDay.id;
+        }
+        
+        // Create the new workout
         newWorkout = await workoutService.create(workoutData);
       }
       
+      // Update state: remove Rest Day if needed, then add new workout
+      if (removedRestDayId) {
+        dispatch({ type: 'DELETE_WORKOUT', payload: removedRestDayId });
+      }
       dispatch({ type: 'ADD_WORKOUT', payload: newWorkout });
       return newWorkout;
     } catch (error) {
@@ -261,7 +290,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to create workout' });
       throw error;
     }
-  }, [isDemo]);
+  }, [isDemo, state.workouts]);
 
   // Update workout
   const updateWorkout = useCallback(async (id: string, updates: Partial<WorkoutDay>) => {
@@ -316,23 +345,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (existing) {
           throw new Error(`There's already a workout scheduled for ${newDate}`);
         }
-        // Remove any rest day on the target date
-        const filteredWorkouts = workouts.filter(w => !(w.date === newDate && w.intensity === 'Rest'));
         
-        const index = filteredWorkouts.findIndex(w => w.id === workoutId);
-        if (index >= 0) {
-          updated = {
-            ...filteredWorkouts[index],
-            date: newDate,
-            moved_from_date: workout.date,
-            status: 'rescheduled',
-            updated_at: new Date().toISOString(),
-          };
-          filteredWorkouts[index] = updated;
-          saveDemoWorkouts(filteredWorkouts);
-        } else {
+        // Find and update the workout
+        const workoutIndex = workouts.findIndex(w => w.id === workoutId);
+        if (workoutIndex < 0) {
           throw new Error('Workout not found');
         }
+        
+        // Update the workout
+        updated = {
+          ...workouts[workoutIndex],
+          date: newDate,
+          moved_from_date: workout.date,
+          status: 'rescheduled',
+          updated_at: new Date().toISOString(),
+        };
+        workouts[workoutIndex] = updated;
+        
+        // Remove any rest day on the target date and save
+        const finalWorkouts = workouts.filter(w => !(w.date === newDate && w.intensity === 'Rest' && w.id !== workoutId));
+        saveDemoWorkouts(finalWorkouts);
+        
+        // Sync state with localStorage (handles removed rest days)
+        dispatch({ type: 'SET_WORKOUTS', payload: finalWorkouts });
+        return; // Early return since we already updated state
       } else {
         updated = await workoutService.moveWorkout(workoutId, newDate, workout.date);
       }

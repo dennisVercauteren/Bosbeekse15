@@ -61,7 +61,7 @@ export default function CheckInForm() {
     try {
       // For new check-ins, generate a proper ID; for existing ones, use the existing ID
       const checkInData = {
-        id: todayCheckIn?.id || `checkin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: todayCheckIn?.id || `checkin-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         date: today,
         ...formData,
         created_at: todayCheckIn?.created_at || new Date().toISOString(),

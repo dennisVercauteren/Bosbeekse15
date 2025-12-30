@@ -38,6 +38,31 @@ import { activityColors } from '../lib/theme';
 
 type TimeRange = '7d' | '30d' | 'all';
 
+// Chart data types
+interface CheckInChartData {
+  date: string;
+  fullDate: string;
+  weight: number | null;
+  sleep: number | null;
+  steps: number | null;
+  energy: number | null;
+  pain: number | null;
+}
+
+interface ActivityDistanceData {
+  name: string;
+  distance: number;
+  color: string;
+}
+
+interface WeeklyDistanceData {
+  week: string;
+  weekNum: number;
+  run: number;
+  walk: number;
+  cycle: number;
+}
+
 // Full-width bar chart for a single metric
 function FullWidthBarChart({
   title,
@@ -50,8 +75,8 @@ function FullWidthBarChart({
 }: {
   title: string;
   icon: React.ReactNode;
-  data: any[];
-  dataKey: string;
+  data: CheckInChartData[];
+  dataKey: keyof CheckInChartData;
   color: string;
   unit?: string;
   domain?: [number | 'auto', number | 'auto'];
@@ -131,7 +156,7 @@ function FullWidthBarChart({
 }
 
 // Distance by activity chart
-function DistanceChart({ data }: { data: any[] }) {
+function DistanceChart({ data }: { data: ActivityDistanceData[] }) {
   const theme = useTheme();
   
   return (
@@ -190,7 +215,7 @@ function DistanceChart({ data }: { data: any[] }) {
 }
 
 // Weekly distance trend chart
-function WeeklyDistanceChart({ data }: { data: any[] }) {
+function WeeklyDistanceChart({ data }: { data: WeeklyDistanceData[] }) {
   const theme = useTheme();
   
   return (
@@ -299,6 +324,7 @@ export default function StatsDashboard() {
   }, [filteredCheckIns]);
   
   // Calculate distance by activity type (only completed workouts)
+  // Uses actual_distance_km when available, falls back to planned_distance_km
   const distanceByActivity = useMemo(() => {
     const totals: Record<string, number> = {
       run: 0,
@@ -309,9 +335,10 @@ export default function StatsDashboard() {
     };
     
     state.workouts
-      .filter(w => w.status === 'completed' && w.planned_distance_km)
+      .filter(w => w.status === 'completed' && (w.actual_distance_km || w.planned_distance_km))
       .forEach(w => {
-        const distance = w.planned_distance_km || 0;
+        // Prefer actual distance over planned for completed workouts
+        const distance = w.actual_distance_km ?? w.planned_distance_km ?? 0;
         const type = w.activity_type || 'run';
         
         if (type in totals) {
@@ -328,29 +355,30 @@ export default function StatsDashboard() {
     ].filter(d => d.distance > 0);
   }, [state.workouts]);
   
-  // Total distance summary
+  // Total distance summary (uses actual distance when available)
   const totalDistance = useMemo(() => {
     return state.workouts
-      .filter(w => w.status === 'completed' && w.planned_distance_km)
-      .reduce((sum, w) => sum + (w.planned_distance_km || 0), 0);
+      .filter(w => w.status === 'completed' && (w.actual_distance_km || w.planned_distance_km))
+      .reduce((sum, w) => sum + (w.actual_distance_km ?? w.planned_distance_km ?? 0), 0);
   }, [state.workouts]);
   
-  // Weekly distance data
+  // Weekly distance data (uses actual distance when available)
   const weeklyDistanceData = useMemo(() => {
     const weeks: Record<number, { run: number; walk: number; cycle: number }> = {};
     
     state.workouts
-      .filter(w => w.status === 'completed' && w.planned_distance_km)
+      .filter(w => w.status === 'completed' && (w.actual_distance_km || w.planned_distance_km))
       .forEach(w => {
         const week = w.week;
         if (!weeks[week]) {
           weeks[week] = { run: 0, walk: 0, cycle: 0 };
         }
         
+        const distance = w.actual_distance_km ?? w.planned_distance_km ?? 0;
         const type = w.activity_type || 'run';
-        if (type === 'run') weeks[week].run += w.planned_distance_km || 0;
-        else if (type === 'walk') weeks[week].walk += w.planned_distance_km || 0;
-        else if (type === 'cycle') weeks[week].cycle += w.planned_distance_km || 0;
+        if (type === 'run') weeks[week].run += distance;
+        else if (type === 'walk') weeks[week].walk += distance;
+        else if (type === 'cycle') weeks[week].cycle += distance;
       });
     
     return Object.entries(weeks)

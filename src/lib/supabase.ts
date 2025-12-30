@@ -171,10 +171,13 @@ export const workoutService = {
   },
 
   async deleteAll(): Promise<void> {
+    // Supabase requires a WHERE clause for delete operations.
+    // Using .neq('id', UUID_ZERO) effectively matches all rows since no real ID equals UUID_ZERO.
+    // This is a common pattern for "delete all" operations in Supabase.
     const { error } = await supabase
       .from('workout_days')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      .neq('id', '00000000-0000-0000-0000-000000000000');
 
     if (error) throw error;
   },
@@ -293,12 +296,20 @@ export const exportData = async (): Promise<string> => {
 
 // Import data from JSON
 export const importData = async (jsonString: string): Promise<void> => {
-  const data = JSON.parse(jsonString);
+  let data: { workouts?: unknown[] };
   
-  if (data.workouts && Array.isArray(data.workouts)) {
-    // Delete existing and import new
-    await workoutService.deleteAll();
-    await workoutService.createMany(data.workouts);
+  try {
+    data = JSON.parse(jsonString);
+  } catch (error) {
+    throw new Error('Invalid JSON format: unable to parse backup file');
   }
+  
+  if (!data.workouts || !Array.isArray(data.workouts)) {
+    throw new Error('Invalid backup file: missing workouts array');
+  }
+  
+  // Delete existing and import new
+  await workoutService.deleteAll();
+  await workoutService.createMany(data.workouts as WorkoutDayInput[]);
 };
 

@@ -30,6 +30,8 @@ export interface WorkoutDay {
   tags: WorkoutTag[];
   planned_distance_km: number | null;
   planned_duration_min: number | null;
+  actual_distance_km: number | null;
+  actual_duration_min: number | null;
   intensity: Intensity;
   status: WorkoutStatus;
   completed_at: string | null;
@@ -50,6 +52,8 @@ export interface WorkoutDayInput {
   tags: WorkoutTag[];
   planned_distance_km?: number | null;
   planned_duration_min?: number | null;
+  actual_distance_km?: number | null;
+  actual_duration_min?: number | null;
   intensity: Intensity;
   status?: WorkoutStatus;
   notes?: string | null;

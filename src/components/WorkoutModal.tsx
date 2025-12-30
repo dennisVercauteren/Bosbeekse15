@@ -31,6 +31,7 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { useApp } from '../context/AppContext';
 import { format, parseISO, addDays } from 'date-fns';
 import { activityColors } from '../lib/theme';
+import type { WorkoutDay, ActivityType } from '../types';
 
 // Activity types
 const ACTIVITY_TYPES = [
@@ -47,6 +48,8 @@ export default function WorkoutModal() {
   const { state, closeDayModal, updateWorkout, moveWorkout, undo, createWorkout } = useApp();
   const theme = useTheme();
   const [notes, setNotes] = useState('');
+  const [actualDistance, setActualDistance] = useState<string>('');
+  const [actualDuration, setActualDuration] = useState<string>('');
   const [showAddActivity, setShowAddActivity] = useState(false);
   const [newActivity, setNewActivity] = useState({
     type: 'run',
@@ -66,6 +69,8 @@ export default function WorkoutModal() {
   useEffect(() => {
     if (workout) {
       setNotes(workout.notes || '');
+      setActualDistance(workout.actual_distance_km?.toString() || '');
+      setActualDuration(workout.actual_duration_min?.toString() || '');
     }
     setShowAddActivity(false);
   }, [workout]);
@@ -79,7 +84,7 @@ export default function WorkoutModal() {
   const handleStatusChange = async (status: 'completed' | 'skipped' | 'planned') => {
     if (!workout) return;
     
-    const updates: any = { status };
+    const updates: Partial<WorkoutDay> = { status };
     
     if (status === 'completed') {
       updates.completed_at = new Date().toISOString();
@@ -91,6 +96,25 @@ export default function WorkoutModal() {
   const handleSaveNotes = async () => {
     if (!workout) return;
     await updateWorkout(workout.id, { notes });
+  };
+
+  const handleSaveActualValues = async () => {
+    if (!workout) return;
+    const updates: Partial<WorkoutDay> = {};
+    
+    const newDistance = actualDistance ? parseFloat(actualDistance) : null;
+    const newDuration = actualDuration ? parseInt(actualDuration) : null;
+    
+    if (newDistance !== workout.actual_distance_km) {
+      updates.actual_distance_km = newDistance;
+    }
+    if (newDuration !== workout.actual_duration_min) {
+      updates.actual_duration_min = newDuration;
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      await updateWorkout(workout.id, updates);
+    }
   };
 
   // Quick move by days (-3, -2, -1, +1, +2, +3)
@@ -119,12 +143,14 @@ export default function WorkoutModal() {
         tags: [],
         planned_distance_km: newActivity.distance ? parseFloat(newActivity.distance) : null,
         planned_duration_min: newActivity.duration || null,
+        actual_distance_km: null,
+        actual_duration_min: null,
         intensity: newActivity.type === 'strength' ? 'Strength' : 'E',
         status: 'planned',
         completed_at: null,
         moved_from_date: null,
         notes: null,
-        activity_type: newActivity.type as any,
+        activity_type: newActivity.type as ActivityType,
       });
       
       // Reset form
@@ -209,28 +235,61 @@ export default function WorkoutModal() {
             )}
 
             {/* Planned metrics */}
-            <Box sx={{ display: 'flex', gap: 3 }}>
-              {workout.planned_distance_km && (
-                <Box>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                    Distance
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {workout.planned_distance_km} km
-                  </Typography>
+            {(workout.planned_distance_km || workout.planned_duration_min) && (
+              <Box sx={{ display: 'flex', gap: 3 }}>
+                {workout.planned_distance_km && (
+                  <Box>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                      Planned Distance
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {workout.planned_distance_km} km
+                    </Typography>
+                  </Box>
+                )}
+                {workout.planned_duration_min && (
+                  <Box>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                      Planned Duration
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {workout.planned_duration_min} min
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {/* Actual metrics - Editable */}
+            {canEdit && (
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+                  Actual Results
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <TextField
+                    size="small"
+                    label="Distance (km)"
+                    type="number"
+                    value={actualDistance}
+                    onChange={(e) => setActualDistance(e.target.value)}
+                    onBlur={handleSaveActualValues}
+                    inputProps={{ step: 0.1, min: 0 }}
+                    sx={{ flex: 1 }}
+                  />
+                  <TextField
+                    size="small"
+                    label="Duration (min)"
+                    type="number"
+                    value={actualDuration}
+                    onChange={(e) => setActualDuration(e.target.value)}
+                    onBlur={handleSaveActualValues}
+                    inputProps={{ step: 1, min: 0 }}
+                    sx={{ flex: 1 }}
+                  />
                 </Box>
-              )}
-              {workout.planned_duration_min && (
-                <Box>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                    Duration
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {workout.planned_duration_min} min
-                  </Typography>
-                </Box>
-              )}
-            </Box>
+              </Box>
+            )}
 
             {/* Quick Move Buttons - Only show if user can edit */}
             {canEdit && (

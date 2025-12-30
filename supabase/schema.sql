@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS workout_days (
   tags TEXT[] DEFAULT '{}',
   planned_distance_km NUMERIC(5,2),
   planned_duration_min INTEGER,
+  actual_distance_km NUMERIC(5,2),
+  actual_duration_min INTEGER,
   intensity TEXT NOT NULL CHECK (intensity IN ('E', 'S', 'T', 'I', 'Rest', 'Strength')),
   status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'completed', 'skipped', 'rescheduled')),
   completed_at TIMESTAMPTZ,
@@ -194,4 +196,11 @@ $$ LANGUAGE plpgsql;
 -- FROM history h 
 -- JOIN workout_days w ON h.workout_id = w.id 
 -- ORDER BY h.created_at DESC;
+
+-- ============================================
+-- MIGRATION: Add actual distance/duration columns
+-- Run this if you have an existing database
+-- ============================================
+-- ALTER TABLE workout_days ADD COLUMN IF NOT EXISTS actual_distance_km NUMERIC(5,2);
+-- ALTER TABLE workout_days ADD COLUMN IF NOT EXISTS actual_duration_min INTEGER;
 
