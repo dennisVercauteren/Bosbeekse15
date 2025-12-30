@@ -1,16 +1,13 @@
-import { ThemeProvider, CssBaseline, Box, Container, Typography, Link, Chip, alpha } from '@mui/material';
+import { ThemeProvider, CssBaseline, Box, Container, Typography, Link, alpha } from '@mui/material';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import MapIcon from '@mui/icons-material/Map';
 import { AppProvider, useApp } from './context/AppContext';
 import { createAppTheme } from './lib/theme';
 import Calendar from './components/Calendar';
 import WorkoutModal from './components/WorkoutModal';
-import StatsPanel from './components/StatsPanel';
 import FilterBar from './components/FilterBar';
 import LoginScreen from './components/LoginScreen';
-import Header from './components/Header';
 import InitializePlan from './components/InitializePlan';
-import CheckInForm from './components/CheckInForm';
 
 function AppContent() {
   const { state } = useApp();
@@ -190,7 +187,7 @@ function App() {
 
 function AppWithTheme() {
   const { state } = useApp();
-  const theme = createAppTheme(state.darkMode);
+  const theme = createAppTheme(state.settings.darkMode);
 
   return (
     <ThemeProvider theme={theme}>

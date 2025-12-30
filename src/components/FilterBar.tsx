@@ -4,24 +4,23 @@ import {
   Select,
   MenuItem,
   Typography,
-  alpha,
 } from '@mui/material';
 import { useApp } from '../context/AppContext';
-import type { FilterState, WorkoutTag, Intensity, WorkoutStatus } from '../types';
+import type { WorkoutTag, Intensity, WorkoutStatus } from '../types';
 
 export default function FilterBar() {
-  const { state, updateFilters } = useApp();
+  const { state, dispatch } = useApp();
 
   const handleStatusChange = (value: string) => {
-    updateFilters({ status: value as WorkoutStatus | 'all' });
+    dispatch({ type: 'SET_FILTERS', payload: { status: value as WorkoutStatus | 'all' } });
   };
 
   const handleIntensityChange = (value: string) => {
-    updateFilters({ intensity: value as Intensity | 'all' });
+    dispatch({ type: 'SET_FILTERS', payload: { intensity: value as Intensity | 'all' } });
   };
 
   const handleTagChange = (value: string) => {
-    updateFilters({ tag: value as WorkoutTag | 'all' });
+    dispatch({ type: 'SET_FILTERS', payload: { tag: value as WorkoutTag | 'all' } });
   };
 
   return (
@@ -84,10 +83,9 @@ export default function FilterBar() {
           }}
         >
           <MenuItem value="all">All Tags</MenuItem>
-          <MenuItem value="Run A">Run A</MenuItem>
-          <MenuItem value="Run B">Run B</MenuItem>
-          <MenuItem value="Long Run">Long Run</MenuItem>
-          <MenuItem value="Shakeout">Shakeout</MenuItem>
+          <MenuItem value="easy">Easy</MenuItem>
+          <MenuItem value="longrun">Long Run</MenuItem>
+          <MenuItem value="strength">Strength</MenuItem>
         </Select>
       </FormControl>
     </Box>

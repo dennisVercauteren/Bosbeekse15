@@ -12,10 +12,6 @@ import {
   Chip,
   Divider,
   alpha,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -29,8 +25,6 @@ import { format, parseISO, addDays } from 'date-fns';
 export default function WorkoutModal() {
   const { state, closeDayModal, updateWorkout, moveWorkout, undo } = useApp();
   const [notes, setNotes] = useState('');
-  const [actualDistance, setActualDistance] = useState<string>('');
-  const [actualDuration, setActualDuration] = useState<string>('');
   const [moveDateOpen, setMoveDateOpen] = useState(false);
   const [moveDate, setMoveDate] = useState('');
 
@@ -42,8 +36,6 @@ export default function WorkoutModal() {
   useEffect(() => {
     if (workout) {
       setNotes(workout.notes || '');
-      setActualDistance(workout.actual_distance_km?.toString() || '');
-      setActualDuration(workout.actual_duration_min?.toString() || '');
     }
   }, [workout]);
 
@@ -60,8 +52,6 @@ export default function WorkoutModal() {
     
     if (status === 'completed') {
       updates.completed_at = new Date().toISOString();
-      if (actualDistance) updates.actual_distance_km = parseFloat(actualDistance);
-      if (actualDuration) updates.actual_duration_min = parseInt(actualDuration);
     }
     
     await updateWorkout(workout.id, updates);
@@ -89,7 +79,7 @@ export default function WorkoutModal() {
 
   return (
     <Dialog
-      open={state.dayModalOpen}
+      open={state.modalOpen}
       onClose={closeDayModal}
       maxWidth="sm"
       fullWidth
@@ -147,13 +137,13 @@ export default function WorkoutModal() {
             </Box>
 
             {/* Workout Details */}
-            {workout.description && (
+            {workout.details && (
               <Box>
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
                   Description
                 </Typography>
                 <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                  {workout.description}
+                  {workout.details}
                 </Typography>
               </Box>
             )}
@@ -181,28 +171,6 @@ export default function WorkoutModal() {
                 </Box>
               )}
             </Box>
-
-            {/* Actual metrics (for completed) */}
-            {isCompleted && (
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  size="small"
-                  label="Actual Distance (km)"
-                  type="number"
-                  value={actualDistance}
-                  onChange={(e) => setActualDistance(e.target.value)}
-                  sx={{ flex: 1 }}
-                />
-                <TextField
-                  size="small"
-                  label="Actual Duration (min)"
-                  type="number"
-                  value={actualDuration}
-                  onChange={(e) => setActualDuration(e.target.value)}
-                  sx={{ flex: 1 }}
-                />
-              </Box>
-            )}
 
             {/* Notes */}
             <Box>

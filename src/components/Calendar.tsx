@@ -5,18 +5,13 @@ import {
   Grid,
   Paper,
   alpha,
-  useTheme,
-  Chip,
-  IconButton,
-  useMediaQuery,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BlockIcon from '@mui/icons-material/Block';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { useApp } from '../context/AppContext';
 import type { WorkoutDay } from '../types';
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, getDay, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, getDay, addMonths } from 'date-fns';
 
 // Day names
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -33,8 +28,6 @@ function WorkoutCard({
   onDragStart: (e: React.DragEvent, workout: WorkoutDay) => void;
   isDragging: boolean;
 }) {
-  const theme = useTheme();
-  
   const statusIcon = () => {
     switch (workout.status) {
       case 'completed':
@@ -192,7 +185,6 @@ function MonthCalendar({
   onDragStart,
   onDragOver,
   onDrop,
-  isDragTarget,
   dragTargetDate,
   isDraggingWorkout,
 }: {
@@ -202,11 +194,9 @@ function MonthCalendar({
   onDragStart: (e: React.DragEvent, workout: WorkoutDay) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, date: string) => void;
-  isDragTarget: boolean;
   dragTargetDate: string | null;
   isDraggingWorkout: WorkoutDay | null;
 }) {
-  const theme = useTheme();
   const today = new Date();
   
   // Get all days for this month's calendar grid
@@ -241,8 +231,8 @@ function MonthCalendar({
       elevation={0}
       sx={{
         p: { xs: 1.5, sm: 2 },
-        backgroundColor: alpha(theme.palette.background.paper, 0.5),
-        border: `1px solid ${theme.palette.divider}`,
+        backgroundColor: alpha('#1a1a1a', 0.5),
+        border: '1px solid #2a2a2a',
         mb: 2,
       }}
     >
@@ -307,8 +297,6 @@ function MonthCalendar({
 
 export default function Calendar() {
   const { state, openDayModal, moveWorkout } = useApp();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   const [draggingWorkout, setDraggingWorkout] = useState<WorkoutDay | null>(null);
   const [dragTargetDate, setDragTargetDate] = useState<string | null>(null);
@@ -356,10 +344,6 @@ export default function Calendar() {
     e.dataTransfer.dropEffect = 'move';
   };
   
-  const handleDragEnter = (date: string) => {
-    setDragTargetDate(date);
-  };
-  
   const handleDrop = async (e: React.DragEvent, date: string) => {
     e.preventDefault();
     setDragTargetDate(null);
@@ -390,14 +374,8 @@ export default function Calendar() {
           workouts={filteredWorkouts}
           onDayClick={handleDayClick}
           onDragStart={handleDragStart}
-          onDragOver={(e) => {
-            handleDragOver(e);
-            const target = e.currentTarget as HTMLElement;
-            const dateAttr = target.getAttribute('data-date');
-            if (dateAttr) handleDragEnter(dateAttr);
-          }}
+          onDragOver={handleDragOver}
           onDrop={handleDrop}
-          isDragTarget={!!draggingWorkout}
           dragTargetDate={dragTargetDate}
           isDraggingWorkout={draggingWorkout}
         />

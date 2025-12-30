@@ -1,4 +1,4 @@
-import { createTheme, alpha } from '@mui/material/styles';
+import { createTheme } from '@mui/material/styles';
 
 // Minimal 2-color palette: Dark + Green accent
 const colors = {
@@ -30,7 +30,7 @@ export const intensityColors = {
   rest: 'transparent',
 };
 
-export const createAppTheme = (darkMode: boolean) => createTheme({
+export const createAppTheme = (_darkMode: boolean) => createTheme({
   palette: {
     mode: 'dark', // Always dark for this minimal theme
     primary: {
