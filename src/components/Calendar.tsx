@@ -5,18 +5,64 @@ import {
   Grid,
   Paper,
   alpha,
+  Tooltip,
+  useTheme,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BlockIcon from '@mui/icons-material/Block';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
+import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
+import PoolIcon from '@mui/icons-material/Pool';
+import SportsTennisIcon from '@mui/icons-material/SportsTennis';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { useApp } from '../context/AppContext';
 import type { WorkoutDay } from '../types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, getDay, addMonths } from 'date-fns';
+import { activityColors, statusColors } from '../lib/theme';
 
 // Day names
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-// Workout card component
+// Get activity icon based on workout title/type
+function getActivityIcon(workout: WorkoutDay, size: number = 18) {
+  const title = workout.title.toLowerCase();
+  const iconSx = { fontSize: size };
+  
+  // Check for activity type in title
+  if (title.includes('cycle') || title.includes('bike') || title.includes('cycling')) {
+    return <DirectionsBikeIcon sx={iconSx} />;
+  }
+  if (title.includes('swim') || title.includes('pool')) {
+    return <PoolIcon sx={iconSx} />;
+  }
+  if (title.includes('walk') || title.includes('walking')) {
+    return <DirectionsWalkIcon sx={iconSx} />;
+  }
+  if (title.includes('padel') || title.includes('squash') || title.includes('tennis')) {
+    return <SportsTennisIcon sx={iconSx} />;
+  }
+  if (title.includes('strength') || title.includes('gym') || workout.intensity === 'Strength') {
+    return <FitnessCenterIcon sx={iconSx} />;
+  }
+  // Default to running
+  return <DirectionsRunIcon sx={iconSx} />;
+}
+
+// Get activity color based on workout
+function getActivityColor(workout: WorkoutDay): string {
+  const title = workout.title.toLowerCase();
+  
+  if (title.includes('cycle') || title.includes('bike')) return activityColors.cycle;
+  if (title.includes('swim') || title.includes('pool')) return activityColors.swim;
+  if (title.includes('walk')) return activityColors.walk;
+  if (title.includes('padel') || title.includes('squash')) return activityColors.padel;
+  if (title.includes('strength') || workout.intensity === 'Strength') return activityColors.strength;
+  return activityColors.run;
+}
+
+// Workout card component - now with icon
 function WorkoutCard({ 
   workout, 
   onClick,
@@ -28,71 +74,72 @@ function WorkoutCard({
   onDragStart: (e: React.DragEvent, workout: WorkoutDay) => void;
   isDragging: boolean;
 }) {
-  const statusIcon = () => {
-    switch (workout.status) {
-      case 'completed':
-        return <CheckCircleIcon sx={{ fontSize: 12 }} />;
-      case 'skipped':
-        return <BlockIcon sx={{ fontSize: 12, opacity: 0.5 }} />;
-      case 'rescheduled':
-        return <SwapHorizIcon sx={{ fontSize: 12, opacity: 0.7 }} />;
-      default:
-        return null;
-    }
-  };
-  
+  const theme = useTheme();
   const isCompleted = workout.status === 'completed';
   const isSkipped = workout.status === 'skipped';
+  const isRescheduled = workout.status === 'rescheduled';
+  
+  const activityColor = isCompleted 
+    ? statusColors.completed 
+    : isSkipped 
+      ? statusColors.skipped 
+      : getActivityColor(workout);
+  
+  const statusIcon = () => {
+    if (isCompleted) return <CheckCircleIcon sx={{ fontSize: 10, position: 'absolute', bottom: -2, right: -2 }} />;
+    if (isSkipped) return <BlockIcon sx={{ fontSize: 10, position: 'absolute', bottom: -2, right: -2, opacity: 0.5 }} />;
+    if (isRescheduled) return <SwapHorizIcon sx={{ fontSize: 10, position: 'absolute', bottom: -2, right: -2, opacity: 0.7 }} />;
+    return null;
+  };
   
   return (
-    <Box
-      draggable
-      onDragStart={(e) => onDragStart(e, workout)}
-      onClick={onClick}
-      sx={{
-        backgroundColor: isCompleted 
-          ? alpha('#22c55e', 0.2)
-          : isSkipped 
-            ? alpha('#666', 0.1)
-            : alpha('#22c55e', 0.1),
-        border: `1px solid ${isCompleted ? alpha('#22c55e', 0.4) : 'transparent'}`,
-        borderRadius: 1,
-        px: 1,
-        py: 0.5,
-        cursor: 'grab',
-        opacity: isDragging ? 0.5 : (isSkipped ? 0.5 : 1),
-        transition: 'all 0.15s ease',
-        '&:hover': {
-          backgroundColor: isCompleted 
-            ? alpha('#22c55e', 0.25)
-            : alpha('#22c55e', 0.15),
-          transform: 'scale(1.02)',
-        },
-        '&:active': {
-          cursor: 'grabbing',
-        },
-        display: 'flex',
-        alignItems: 'center',
-        gap: 0.5,
-        minHeight: 28,
-      }}
+    <Tooltip 
+      title={
+        <Box>
+          <Typography variant="caption" sx={{ fontWeight: 600 }}>{workout.title}</Typography>
+          {workout.planned_duration_min && (
+            <Typography variant="caption" display="block">{workout.planned_duration_min} min</Typography>
+          )}
+          {workout.planned_distance_km && (
+            <Typography variant="caption" display="block">{workout.planned_distance_km} km</Typography>
+          )}
+        </Box>
+      }
+      arrow
+      placement="top"
     >
-      {statusIcon()}
-      <Typography
-        variant="caption"
+      <Box
+        draggable
+        onDragStart={(e) => onDragStart(e, workout)}
+        onClick={onClick}
         sx={{
-          fontWeight: 500,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          flex: 1,
-          fontSize: '0.7rem',
-          textDecoration: isSkipped ? 'line-through' : 'none',
+          backgroundColor: alpha(activityColor, isSkipped ? 0.1 : 0.15),
+          border: `2px solid ${alpha(activityColor, isSkipped ? 0.2 : 0.5)}`,
+          borderRadius: '50%',
+          width: { xs: 32, sm: 36 },
+          height: { xs: 32, sm: 36 },
+          cursor: 'grab',
+          opacity: isDragging ? 0.5 : (isSkipped ? 0.5 : 1),
+          transition: 'all 0.15s ease',
+          '&:hover': {
+            backgroundColor: alpha(activityColor, 0.25),
+            transform: 'scale(1.1)',
+          },
+          '&:active': {
+            cursor: 'grabbing',
+          },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          color: activityColor,
+          mx: 'auto',
         }}
       >
-        {workout.title.replace(' (Easy)', '').replace(' - Deload', '').replace(' - Taper', '')}
-      </Typography>
-    </Box>
+        {getActivityIcon(workout, 18)}
+        {statusIcon()}
+      </Box>
+    </Tooltip>
   );
 }
 
@@ -120,6 +167,7 @@ function DayCell({
   isDragTarget: boolean;
   isDraggingWorkout: WorkoutDay | null;
 }) {
+  const theme = useTheme();
   const dateStr = format(date, 'yyyy-MM-dd');
   const dayNum = format(date, 'd');
   const isRest = workout?.intensity === 'Rest';
@@ -131,34 +179,36 @@ function DayCell({
       onDrop={(e) => onDrop(e, dateStr)}
       onClick={() => onClick(dateStr)}
       sx={{
-        minHeight: { xs: 60, sm: 80 },
+        minHeight: { xs: 56, sm: 70 },
         p: 0.5,
         backgroundColor: isDragTarget 
-          ? alpha('#22c55e', 0.1)
+          ? alpha(theme.palette.primary.main, 0.1)
           : isToday 
-            ? alpha('#22c55e', 0.05)
+            ? alpha(theme.palette.primary.main, 0.05)
             : 'transparent',
         border: isDragTarget 
-          ? `2px dashed ${alpha('#22c55e', 0.5)}`
+          ? `2px dashed ${alpha(theme.palette.primary.main, 0.5)}`
           : isToday 
-            ? `1px solid ${alpha('#22c55e', 0.3)}`
-            : '1px solid transparent',
+            ? `2px solid ${alpha(theme.palette.primary.main, 0.3)}`
+            : `1px solid ${alpha(theme.palette.divider, 0.3)}`,
         borderRadius: 1,
         cursor: 'pointer',
         transition: 'all 0.15s ease',
         opacity: isCurrentMonth ? 1 : 0.3,
         '&:hover': {
-          backgroundColor: alpha('#22c55e', 0.05),
+          backgroundColor: alpha(theme.palette.primary.main, 0.05),
         },
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
     >
       <Typography
         variant="caption"
         sx={{
           fontWeight: isToday ? 700 : 400,
-          color: isToday ? '#22c55e' : 'text.secondary',
-          fontSize: '0.75rem',
-          display: 'block',
+          color: isToday ? theme.palette.primary.main : 'text.secondary',
+          fontSize: '0.7rem',
           mb: 0.5,
         }}
       >
@@ -197,6 +247,7 @@ function MonthCalendar({
   dragTargetDate: string | null;
   isDraggingWorkout: WorkoutDay | null;
 }) {
+  const theme = useTheme();
   const today = new Date();
   
   // Get all days for this month's calendar grid
@@ -231,8 +282,8 @@ function MonthCalendar({
       elevation={0}
       sx={{
         p: { xs: 1.5, sm: 2 },
-        backgroundColor: alpha('#1a1a1a', 0.5),
-        border: '1px solid #2a2a2a',
+        backgroundColor: theme.palette.background.paper,
+        border: `1px solid ${theme.palette.divider}`,
         mb: 2,
       }}
     >
@@ -286,7 +337,7 @@ function MonthCalendar({
                 isDraggingWorkout={isDraggingWorkout}
               />
             ) : (
-              <Box sx={{ minHeight: { xs: 60, sm: 80 } }} />
+              <Box sx={{ minHeight: { xs: 56, sm: 70 } }} />
             )}
           </Grid>
         ))}

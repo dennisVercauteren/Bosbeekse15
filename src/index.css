@@ -1,24 +1,10 @@
+/* Bosbeekse 15 - Training Plan Calendar */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
 :root {
-  /* Minimal 2-color theme: Dark + Accent */
-  --color-bg: #111111;
-  --color-surface: #1a1a1a;
-  --color-surface-hover: #222222;
-  --color-border: #2a2a2a;
-  --color-text: #ffffff;
-  --color-text-muted: #888888;
-  --color-accent: #22c55e;
-  --color-accent-muted: rgba(34, 197, 94, 0.15);
-  
-  /* Status - only green for completed, muted for others */
-  --color-completed: #22c55e;
-  --color-skipped: #666666;
-  --color-workout: #22c55e;
-  
   font-family: 'Outfit', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: var(--color-text);
-  background-color: var(--color-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -26,14 +12,13 @@
 }
 
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
 body {
+  margin: 0;
+  min-width: 320px;
   min-height: 100vh;
-  background: var(--color-bg);
 }
 
 #root {
@@ -42,8 +27,8 @@ body {
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -51,21 +36,28 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  background: rgba(128, 128, 128, 0.5);
 }
 
-/* Custom animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Selection */
+::selection {
+  background: rgba(196, 30, 58, 0.3);
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
+/* Focus outline */
+*:focus-visible {
+  outline: 2px solid rgba(196, 30, 58, 0.5);
+  outline-offset: 2px;
 }
 
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  html {
+    font-size: 14px;
+  }
+}

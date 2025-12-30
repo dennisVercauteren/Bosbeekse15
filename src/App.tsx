@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ThemeProvider, CssBaseline, Box, Container, Typography, Link, alpha, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip } from '@mui/material';
+import { ThemeProvider, CssBaseline, Box, Container, Typography, Link, alpha, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip, useTheme } from '@mui/material';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import MapIcon from '@mui/icons-material/Map';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -14,10 +14,12 @@ import WorkoutModal from './components/WorkoutModal';
 import FilterBar from './components/FilterBar';
 import LoginScreen from './components/LoginScreen';
 import InitializePlan from './components/InitializePlan';
+import CheckInForm from './components/CheckInForm';
 import { generateICalFile, downloadFile } from './lib/utils';
 
 function AppContent() {
   const { state, dispatch, logout } = useApp();
+  const theme = useTheme();
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   if (!state.authenticated) {
@@ -62,7 +64,7 @@ function AppContent() {
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          backgroundColor: alpha('#111111', 0.95),
+          backgroundColor: alpha(theme.palette.background.default, 0.95),
           backdropFilter: 'blur(10px)',
           borderBottom: '1px solid',
           borderColor: 'divider',
@@ -81,9 +83,9 @@ function AppContent() {
           >
             {/* Title & Race Info */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <DirectionsRunIcon sx={{ color: '#22c55e', fontSize: 28 }} />
+              <DirectionsRunIcon sx={{ color: theme.palette.primary.main, fontSize: 28 }} />
               <Box>
-                <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2, color: theme.palette.primary.main }}>
                   Bosbeekse 15
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -99,13 +101,13 @@ function AppContent() {
                 target="_blank"
                 rel="noopener"
                 sx={{
-                  display: 'flex',
+                  display: { xs: 'none', sm: 'flex' },
                   alignItems: 'center',
                   gap: 0.5,
                   color: 'text.secondary',
                   textDecoration: 'none',
                   fontSize: '0.8rem',
-                  '&:hover': { color: '#22c55e' },
+                  '&:hover': { color: theme.palette.primary.main },
                 }}
               >
                 <MapIcon sx={{ fontSize: 16 }} />
@@ -177,6 +179,9 @@ function AppContent() {
             value={getThisWeekWorkouts(state.workouts)} 
           />
         </Box>
+
+        {/* Daily Check-In */}
+        <CheckInForm />
         
         {/* Filter Bar */}
         <Box sx={{ mb: 3 }}>
@@ -195,6 +200,8 @@ function AppContent() {
 
 // Simple stat card
 function StatCard({ label, value, suffix = '' }: { label: string; value: number | string; suffix?: string }) {
+  const theme = useTheme();
+  
   return (
     <Box
       sx={{
@@ -208,7 +215,7 @@ function StatCard({ label, value, suffix = '' }: { label: string; value: number 
       <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
         {label}
       </Typography>
-      <Typography variant="h5" sx={{ fontWeight: 600, color: '#22c55e' }}>
+      <Typography variant="h5" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
         {value}
         {suffix && (
           <Typography component="span" variant="body2" sx={{ color: 'text.secondary', ml: 0.5 }}>

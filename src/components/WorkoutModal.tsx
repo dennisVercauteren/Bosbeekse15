@@ -12,21 +12,48 @@ import {
   Chip,
   Divider,
   alpha,
+  ButtonGroup,
+  useTheme,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BlockIcon from '@mui/icons-material/Block';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import UndoIcon from '@mui/icons-material/Undo';
+import AddIcon from '@mui/icons-material/Add';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
+import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
+import PoolIcon from '@mui/icons-material/Pool';
+import SportsTennisIcon from '@mui/icons-material/SportsTennis';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { useApp } from '../context/AppContext';
 import { format, parseISO, addDays } from 'date-fns';
+import { activityColors } from '../lib/theme';
+
+// Activity types
+const ACTIVITY_TYPES = [
+  { id: 'run', label: 'Run', icon: DirectionsRunIcon, color: activityColors.run },
+  { id: 'walk', label: 'Walk', icon: DirectionsWalkIcon, color: activityColors.walk },
+  { id: 'cycle', label: 'Cycle', icon: DirectionsBikeIcon, color: activityColors.cycle },
+  { id: 'swim', label: 'Swim', icon: PoolIcon, color: activityColors.swim },
+  { id: 'padel', label: 'Padel', icon: SportsTennisIcon, color: activityColors.padel },
+  { id: 'squash', label: 'Squash', icon: SportsTennisIcon, color: activityColors.squash },
+  { id: 'strength', label: 'Strength', icon: FitnessCenterIcon, color: activityColors.strength },
+];
 
 export default function WorkoutModal() {
-  const { state, closeDayModal, updateWorkout, moveWorkout, undo } = useApp();
+  const { state, closeDayModal, updateWorkout, moveWorkout, undo, dispatch } = useApp();
+  const theme = useTheme();
   const [notes, setNotes] = useState('');
-  const [moveDateOpen, setMoveDateOpen] = useState(false);
-  const [moveDate, setMoveDate] = useState('');
+  const [showAddActivity, setShowAddActivity] = useState(false);
+  const [newActivity, setNewActivity] = useState({
+    type: 'run',
+    duration: 30,
+    distance: '',
+    notes: '',
+  });
 
   const workout = useMemo(() => {
     if (!state.selectedDate) return null;
@@ -37,6 +64,7 @@ export default function WorkoutModal() {
     if (workout) {
       setNotes(workout.notes || '');
     }
+    setShowAddActivity(false);
   }, [workout]);
 
   if (!state.selectedDate) return null;
@@ -62,20 +90,55 @@ export default function WorkoutModal() {
     await updateWorkout(workout.id, { notes });
   };
 
-  const handleMoveToNextDay = async () => {
+  // Quick move by days (-3, -2, -1, +1, +2, +3)
+  const handleQuickMove = async (days: number) => {
     if (!workout) return;
-    const nextDay = format(addDays(parseISO(workout.date), 1), 'yyyy-MM-dd');
-    await moveWorkout(workout.id, nextDay);
+    const newDate = format(addDays(parseISO(workout.date), days), 'yyyy-MM-dd');
+    await moveWorkout(workout.id, newDate);
     closeDayModal();
   };
 
-  const handleMoveToDate = async () => {
-    if (!workout || !moveDate) return;
-    await moveWorkout(workout.id, moveDate);
-    setMoveDateOpen(false);
-    setMoveDate('');
-    closeDayModal();
+  // Add custom activity
+  const handleAddActivity = async () => {
+    if (!state.selectedDate) return;
+    
+    const activityType = ACTIVITY_TYPES.find(t => t.id === newActivity.type);
+    const title = `${activityType?.label || 'Activity'}`;
+    
+    // Create new workout
+    const newWorkout = {
+      id: `custom-${Date.now()}`,
+      date: state.selectedDate,
+      title,
+      details: newActivity.notes || `Custom ${activityType?.label} activity`,
+      phase: 'Custom',
+      week: 0,
+      tags: [] as any[],
+      planned_distance_km: newActivity.distance ? parseFloat(newActivity.distance) : null,
+      planned_duration_min: newActivity.duration,
+      intensity: newActivity.type === 'strength' ? 'Strength' as const : 'E' as const,
+      status: 'planned' as const,
+      completed_at: null,
+      moved_from_date: null,
+      notes: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    
+    // Add to state (demo mode - localStorage)
+    const existingWorkouts = JSON.parse(localStorage.getItem('bosbeekse15_demo_workouts') || '[]');
+    existingWorkouts.push(newWorkout);
+    localStorage.setItem('bosbeekse15_demo_workouts', JSON.stringify(existingWorkouts));
+    
+    // Update state
+    dispatch({ type: 'SET_WORKOUTS', payload: existingWorkouts });
+    
+    // Reset form
+    setNewActivity({ type: 'run', duration: 30, distance: '', notes: '' });
+    setShowAddActivity(false);
   };
+
+  const selectedActivityType = ACTIVITY_TYPES.find(t => t.id === newActivity.type);
 
   return (
     <Dialog
@@ -85,8 +148,8 @@ export default function WorkoutModal() {
       fullWidth
       PaperProps={{
         sx: {
-          backgroundColor: '#1a1a1a',
-          border: '1px solid #2a2a2a',
+          backgroundColor: theme.palette.background.paper,
+          border: `1px solid ${theme.palette.divider}`,
         },
       }}
     >
@@ -94,11 +157,11 @@ export default function WorkoutModal() {
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              {workout?.title || 'Rest Day'}
+              {workout?.title || 'No Activity'}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {formattedDate}
-              {workout && ` • ${workout.phase} • Week ${workout.week}`}
+              {workout && workout.phase !== 'Custom' && ` • ${workout.phase} • Week ${workout.week}`}
             </Typography>
           </Box>
           <IconButton onClick={closeDayModal} size="small" sx={{ color: 'text.secondary' }}>
@@ -107,21 +170,21 @@ export default function WorkoutModal() {
         </Box>
       </DialogTitle>
 
-      <Divider sx={{ borderColor: '#2a2a2a' }} />
+      <Divider sx={{ borderColor: theme.palette.divider }} />
 
       <DialogContent sx={{ pt: 2 }}>
         {workout && !isRest ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* Status Badge */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               <Chip
                 size="small"
                 label={workout.status.charAt(0).toUpperCase() + workout.status.slice(1)}
                 sx={{
                   backgroundColor: isCompleted 
                     ? alpha('#22c55e', 0.2) 
-                    : alpha('#666', 0.2),
-                  color: isCompleted ? '#22c55e' : '#888',
+                    : alpha(theme.palette.primary.main, 0.1),
+                  color: isCompleted ? '#22c55e' : theme.palette.primary.main,
                   fontWeight: 500,
                 }}
               />
@@ -131,7 +194,7 @@ export default function WorkoutModal() {
                   size="small"
                   label={tag}
                   variant="outlined"
-                  sx={{ borderColor: '#2a2a2a', fontSize: '0.7rem' }}
+                  sx={{ borderColor: theme.palette.divider, fontSize: '0.7rem' }}
                 />
               ))}
             </Box>
@@ -172,6 +235,21 @@ export default function WorkoutModal() {
               )}
             </Box>
 
+            {/* Quick Move Buttons */}
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+                Move Activity
+              </Typography>
+              <ButtonGroup size="small" variant="outlined" fullWidth>
+                <Button onClick={() => handleQuickMove(-3)}>-3</Button>
+                <Button onClick={() => handleQuickMove(-2)}>-2</Button>
+                <Button onClick={() => handleQuickMove(-1)}>-1</Button>
+                <Button onClick={() => handleQuickMove(1)}>+1</Button>
+                <Button onClick={() => handleQuickMove(2)}>+2</Button>
+                <Button onClick={() => handleQuickMove(3)}>+3</Button>
+              </ButtonGroup>
+            </Box>
+
             {/* Notes */}
             <Box>
               <TextField
@@ -185,62 +263,121 @@ export default function WorkoutModal() {
                 onBlur={handleSaveNotes}
               />
             </Box>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {!showAddActivity ? (
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                  {isRest ? 'Rest day scheduled' : 'No activity scheduled'}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={() => setShowAddActivity(true)}
+                  sx={{ borderColor: theme.palette.primary.main, color: theme.palette.primary.main }}
+                >
+                  Add Activity
+                </Button>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Add Custom Activity
+                </Typography>
+                
+                {/* Activity Type Selection */}
+                <Box>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+                    Activity Type
+                  </Typography>
+                  <ToggleButtonGroup
+                    value={newActivity.type}
+                    exclusive
+                    onChange={(_, value) => value && setNewActivity({ ...newActivity, type: value })}
+                    size="small"
+                    sx={{ flexWrap: 'wrap', gap: 0.5 }}
+                  >
+                    {ACTIVITY_TYPES.map(type => (
+                      <ToggleButton 
+                        key={type.id} 
+                        value={type.id}
+                        sx={{
+                          border: `1px solid ${theme.palette.divider}`,
+                          '&.Mui-selected': {
+                            backgroundColor: alpha(type.color, 0.15),
+                            color: type.color,
+                            borderColor: type.color,
+                          },
+                        }}
+                      >
+                        <type.icon sx={{ fontSize: 18, mr: 0.5 }} />
+                        {type.label}
+                      </ToggleButton>
+                    ))}
+                  </ToggleButtonGroup>
+                </Box>
 
-            {/* Move to date */}
-            {moveDateOpen && (
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                {/* Duration & Distance */}
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <TextField
+                    size="small"
+                    label="Duration (min)"
+                    type="number"
+                    value={newActivity.duration}
+                    onChange={(e) => setNewActivity({ ...newActivity, duration: parseInt(e.target.value) || 0 })}
+                    sx={{ flex: 1 }}
+                  />
+                  <TextField
+                    size="small"
+                    label="Distance (km)"
+                    type="number"
+                    value={newActivity.distance}
+                    onChange={(e) => setNewActivity({ ...newActivity, distance: e.target.value })}
+                    sx={{ flex: 1 }}
+                  />
+                </Box>
+
+                {/* Notes */}
                 <TextField
                   size="small"
-                  type="date"
-                  value={moveDate}
-                  onChange={(e) => setMoveDate(e.target.value)}
-                  sx={{ flex: 1 }}
+                  label="Notes (optional)"
+                  value={newActivity.notes}
+                  onChange={(e) => setNewActivity({ ...newActivity, notes: e.target.value })}
+                  fullWidth
                 />
-                <Button 
-                  size="small" 
-                  variant="contained" 
-                  onClick={handleMoveToDate}
-                  disabled={!moveDate}
-                >
-                  Move
-                </Button>
-                <Button 
-                  size="small" 
-                  onClick={() => setMoveDateOpen(false)}
-                >
-                  Cancel
-                </Button>
+
+                {/* Add Button */}
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    onClick={handleAddActivity}
+                    sx={{ 
+                      flex: 1,
+                      backgroundColor: selectedActivityType?.color,
+                      '&:hover': { backgroundColor: alpha(selectedActivityType?.color || '#C41E3A', 0.8) },
+                    }}
+                  >
+                    Add {selectedActivityType?.label}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setShowAddActivity(false)}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
               </Box>
             )}
           </Box>
-        ) : (
-          <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
-            {isRest ? 'Rest day - no workout scheduled' : 'No workout scheduled for this day'}
-          </Typography>
         )}
       </DialogContent>
 
       {workout && !isRest && (
         <>
-          <Divider sx={{ borderColor: '#2a2a2a' }} />
+          <Divider sx={{ borderColor: theme.palette.divider }} />
           <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                size="small"
-                startIcon={<ArrowForwardIcon />}
-                onClick={handleMoveToNextDay}
-                sx={{ color: 'text.secondary' }}
-              >
-                Next Day
-              </Button>
-              <Button
-                size="small"
-                startIcon={<CalendarTodayIcon />}
-                onClick={() => setMoveDateOpen(true)}
-                sx={{ color: 'text.secondary' }}
-              >
-                Pick Date
-              </Button>
               {state.undoStack.length > 0 && (
                 <Button
                   size="small"
@@ -259,7 +396,7 @@ export default function WorkoutModal() {
                   size="small"
                   startIcon={<BlockIcon />}
                   onClick={() => handleStatusChange('skipped')}
-                  sx={{ color: '#666' }}
+                  sx={{ color: theme.palette.text.secondary }}
                 >
                   Skip
                 </Button>
@@ -279,7 +416,7 @@ export default function WorkoutModal() {
                   size="small"
                   variant="outlined"
                   onClick={() => handleStatusChange('planned')}
-                  sx={{ borderColor: '#2a2a2a' }}
+                  sx={{ borderColor: theme.palette.divider }}
                 >
                   Undo Complete
                 </Button>

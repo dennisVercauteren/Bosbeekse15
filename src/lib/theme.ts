@@ -1,18 +1,32 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, alpha } from '@mui/material/styles';
 
-// Minimal 2-color palette: Dark + Green accent
+// Colors from the Bosbeekse 15 poster
 const colors = {
-  bg: '#111111',
-  surface: '#1a1a1a',
-  surfaceHover: '#222222',
-  border: '#2a2a2a',
-  text: '#ffffff',
-  textMuted: '#888888',
-  accent: '#22c55e',
-  accentMuted: 'rgba(34, 197, 94, 0.15)',
+  // Light theme (default)
+  light: {
+    bg: '#F5F0E8',           // Cream/beige background
+    surface: '#FFFFFF',
+    surfaceHover: '#FAF8F5',
+    border: '#E8E0D8',
+    text: '#1a1a1a',
+    textMuted: '#666666',
+    accent: '#C41E3A',       // Poster magenta/crimson
+    accentMuted: 'rgba(196, 30, 58, 0.15)',
+  },
+  // Dark theme
+  dark: {
+    bg: '#111111',
+    surface: '#1a1a1a',
+    surfaceHover: '#222222',
+    border: '#2a2a2a',
+    text: '#ffffff',
+    textMuted: '#888888',
+    accent: '#C41E3A',       // Same accent
+    accentMuted: 'rgba(196, 30, 58, 0.15)',
+  },
 };
 
-// Status colors - minimal
+// Status colors
 export const statusColors = {
   completed: '#22c55e',
   skipped: '#666666',
@@ -20,119 +34,138 @@ export const statusColors = {
   planned: '#444444',
 };
 
-// All workouts use accent color, only differentiate by opacity for status
-export const intensityColors = {
-  easy: '#22c55e',
-  steady: '#22c55e',
-  tempo: '#22c55e',
-  interval: '#22c55e',
-  strength: '#22c55e',
+// Activity type colors
+export const activityColors = {
+  run: '#C41E3A',
+  walk: '#22c55e',
+  cycle: '#3b82f6',
+  swim: '#06b6d4',
+  padel: '#f97316',
+  squash: '#a855f7',
+  strength: '#eab308',
   rest: 'transparent',
 };
 
-export const createAppTheme = (_darkMode: boolean) => createTheme({
-  palette: {
-    mode: 'dark', // Always dark for this minimal theme
-    primary: {
-      main: colors.accent,
-      light: colors.accent,
-      dark: colors.accent,
-      contrastText: '#000',
-    },
-    secondary: {
-      main: colors.textMuted,
-    },
-    background: {
-      default: colors.bg,
-      paper: colors.surface,
-    },
-    text: {
-      primary: colors.text,
-      secondary: colors.textMuted,
-    },
-    success: {
-      main: colors.accent,
-    },
-    warning: {
-      main: '#888888',
-    },
-    info: {
-      main: '#888888',
-    },
-    divider: colors.border,
-  },
-  typography: {
-    fontFamily: '"Outfit", system-ui, -apple-system, sans-serif',
-    h1: { fontWeight: 600 },
-    h2: { fontWeight: 600 },
-    h3: { fontWeight: 600 },
-    h4: { fontWeight: 600 },
-    h5: { fontWeight: 500 },
-    h6: { fontWeight: 500 },
-    button: { fontWeight: 500, textTransform: 'none' },
-  },
-  shape: {
-    borderRadius: 8,
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 6,
-          padding: '8px 16px',
-        },
-        contained: {
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: 'none',
-          },
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-          backgroundColor: colors.surface,
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          border: `1px solid ${colors.border}`,
-          backgroundColor: colors.surface,
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          fontWeight: 500,
-          borderRadius: 4,
-        },
-      },
-    },
-    MuiDialog: {
-      styleOverrides: {
-        paper: {
-          borderRadius: 12,
-          backgroundColor: colors.surface,
-          border: `1px solid ${colors.border}`,
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 6,
-          },
-        },
-      },
-    },
-  },
-});
+// For backwards compatibility
+export const intensityColors = {
+  easy: '#C41E3A',
+  steady: '#C41E3A',
+  tempo: '#C41E3A',
+  interval: '#C41E3A',
+  strength: '#eab308',
+  rest: 'transparent',
+};
 
-export { colors as forestColors };
+export const createAppTheme = (darkMode: boolean) => {
+  const palette = darkMode ? colors.dark : colors.light;
+  
+  return createTheme({
+    palette: {
+      mode: darkMode ? 'dark' : 'light',
+      primary: {
+        main: palette.accent,
+        light: alpha(palette.accent, 0.7),
+        dark: palette.accent,
+        contrastText: '#fff',
+      },
+      secondary: {
+        main: palette.textMuted,
+      },
+      background: {
+        default: palette.bg,
+        paper: palette.surface,
+      },
+      text: {
+        primary: palette.text,
+        secondary: palette.textMuted,
+      },
+      success: {
+        main: '#22c55e',
+      },
+      warning: {
+        main: '#f97316',
+      },
+      error: {
+        main: '#ef4444',
+      },
+      info: {
+        main: '#3b82f6',
+      },
+      divider: palette.border,
+    },
+    typography: {
+      fontFamily: '"Outfit", system-ui, -apple-system, sans-serif',
+      h1: { fontWeight: 700 },
+      h2: { fontWeight: 700 },
+      h3: { fontWeight: 600 },
+      h4: { fontWeight: 600 },
+      h5: { fontWeight: 500 },
+      h6: { fontWeight: 500 },
+      button: { fontWeight: 600, textTransform: 'none' },
+    },
+    shape: {
+      borderRadius: 8,
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 6,
+            padding: '8px 16px',
+          },
+          contained: {
+            boxShadow: 'none',
+            '&:hover': {
+              boxShadow: 'none',
+            },
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+            backgroundColor: palette.surface,
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            borderRadius: 8,
+            border: `1px solid ${palette.border}`,
+            backgroundColor: palette.surface,
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            fontWeight: 500,
+            borderRadius: 4,
+          },
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          paper: {
+            borderRadius: 12,
+            backgroundColor: palette.surface,
+            border: `1px solid ${palette.border}`,
+          },
+        },
+      },
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 6,
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
+export { colors as themeColors };

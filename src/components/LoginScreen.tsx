@@ -35,7 +35,7 @@ export default function LoginScreen() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#111111',
+        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${theme.palette.background.default} 100%)`,
         p: 2,
       }}
     >
@@ -47,7 +47,8 @@ export default function LoginScreen() {
           width: '100%',
           borderRadius: 4,
           textAlign: 'center',
-          backgroundColor: alpha(theme.palette.background.paper, 0.95),
+          backgroundColor: theme.palette.background.paper,
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Box
@@ -55,7 +56,7 @@ export default function LoginScreen() {
             width: 80,
             height: 80,
             borderRadius: '50%',
-            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+            backgroundColor: alpha(theme.palette.primary.main, 0.15),
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -63,14 +64,17 @@ export default function LoginScreen() {
             mb: 3,
           }}
         >
-          <DirectionsRunIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+          <DirectionsRunIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />
         </Box>
         
-        <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
+        <Typography variant="h4" fontWeight={700} sx={{ mb: 1, color: theme.palette.primary.main }}>
           Bosbeekse 15
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
           Training Plan Calendar
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 4, display: 'block' }}>
+          Zaterdag 2 Mei 2026 • 14:00 uur
         </Typography>
         
         <form onSubmit={handleSubmit}>
@@ -114,4 +118,3 @@ export default function LoginScreen() {
     </Box>
   );
 }
-
