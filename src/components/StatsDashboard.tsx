@@ -9,7 +9,6 @@ import {
   IconButton,
   ToggleButton,
   ToggleButtonGroup,
-  Stack,
 } from '@mui/material';
 import {
   XAxis,
@@ -515,31 +514,38 @@ export default function StatsDashboard() {
           <WeeklyDistanceChart data={weeklyDistanceData} />
           
           {/* Summary stats */}
-          <Stack direction="row" spacing={3} sx={{ mt: 2, flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <DirectionsRunIcon sx={{ color: activityColors.run, fontSize: 18 }} />
-              <Typography variant="body2" color="text.secondary">
-                Running: <strong>{distanceByActivity.find(d => d.name === 'Running')?.distance.toFixed(1) || 0} km</strong>
+          <Box 
+            sx={{ 
+              mt: 2, 
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' },
+              gap: 1.5,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <DirectionsRunIcon sx={{ color: activityColors.run, fontSize: 16 }} />
+              <Typography variant="caption" color="text.secondary">
+                Run: <strong>{distanceByActivity.find(d => d.name === 'Running')?.distance.toFixed(1) || 0}</strong>
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <DirectionsWalkIcon sx={{ color: activityColors.walk, fontSize: 18 }} />
-              <Typography variant="body2" color="text.secondary">
-                Walking: <strong>{distanceByActivity.find(d => d.name === 'Walking')?.distance.toFixed(1) || 0} km</strong>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <DirectionsWalkIcon sx={{ color: activityColors.walk, fontSize: 16 }} />
+              <Typography variant="caption" color="text.secondary">
+                Walk: <strong>{distanceByActivity.find(d => d.name === 'Walking')?.distance.toFixed(1) || 0}</strong>
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <DirectionsBikeIcon sx={{ color: activityColors.cycle, fontSize: 18 }} />
-              <Typography variant="body2" color="text.secondary">
-                Cycling: <strong>{distanceByActivity.find(d => d.name === 'Cycling')?.distance.toFixed(1) || 0} km</strong>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <DirectionsBikeIcon sx={{ color: activityColors.cycle, fontSize: 16 }} />
+              <Typography variant="caption" color="text.secondary">
+                Cycle: <strong>{distanceByActivity.find(d => d.name === 'Cycling')?.distance.toFixed(1) || 0}</strong>
               </Typography>
             </Box>
             <Box>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="caption" color="text.secondary">
                 Total: <strong>{totalDistance.toFixed(1)} km</strong>
               </Typography>
             </Box>
-          </Stack>
+          </Box>
           
           {!hasCheckInData && !hasWorkoutData && (
             <Box sx={{ textAlign: 'center', py: 3 }}>

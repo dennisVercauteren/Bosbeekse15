@@ -98,7 +98,7 @@ function AppContent() {
           borderColor: 'divider',
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth="xl">
           <Box
             sx={{
               display: 'flex',
@@ -191,7 +191,7 @@ function AppContent() {
       </Box>
 
       {/* Main Content */}
-      <Container maxWidth="lg" sx={{ py: 3 }}>
+      <Container maxWidth="xl" sx={{ py: 3 }}>
         {/* View-only notice for non-authenticated users */}
         {!state.authenticated && state.workouts.length > 0 && (
           <Alert 
@@ -208,48 +208,71 @@ function AppContent() {
           </Alert>
         )}
 
-        {/* Stats Cards */}
+        {/* Two-column layout for desktop */}
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' },
-            gap: 2,
-            mb: 3,
+            gridTemplateColumns: { xs: '1fr', lg: '340px 1fr' },
+            gap: 3,
+            alignItems: 'start',
           }}
         >
-          <StatCard 
-            label="Completed" 
-            value={completedWorkouts} 
-            suffix={`/ ${totalWorkouts}`}
-          />
-          <StatCard 
-            label="Days Left" 
-            value={daysUntil} 
-          />
-          <StatCard 
-            label="Progress" 
-            value={progress} 
-            suffix="%"
-          />
-          <StatCard 
-            label="This Week" 
-            value={getThisWeekWorkouts(state.workouts)} 
-          />
-        </Box>
+          {/* Left Column: Stats, Check-in, Dashboard */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3,
+              position: { lg: 'sticky' },
+              top: { lg: 80 },
+            }}
+          >
+            {/* Stats Cards */}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr 1fr', lg: '1fr 1fr' },
+                gap: 2,
+              }}
+            >
+              <StatCard 
+                label="Completed" 
+                value={completedWorkouts} 
+                suffix={`/ ${totalWorkouts}`}
+              />
+              <StatCard 
+                label="Days Left" 
+                value={daysUntil} 
+              />
+              <StatCard 
+                label="Progress" 
+                value={progress} 
+                suffix="%"
+              />
+              <StatCard 
+                label="This Week" 
+                value={getThisWeekWorkouts(state.workouts)} 
+              />
+            </Box>
 
-        {/* Daily Check-In - Only for authenticated users */}
-        {state.authenticated && <CheckInForm />}
-        
-        {/* Stats Dashboard */}
-        <StatsDashboard />
-        
-        {/* Filter Bar */}
-        <Box sx={{ mb: 3 }}>
-          <FilterBar />
+            {/* Daily Check-In - Only for authenticated users */}
+            {state.authenticated && <CheckInForm />}
+            
+            {/* Stats Dashboard */}
+            <StatsDashboard />
+          </Box>
+
+          {/* Right Column: Filter + Calendar */}
+          <Box>
+            {/* Filter Bar */}
+            <Box sx={{ mb: 3 }}>
+              <FilterBar />
+            </Box>
+            
+            {/* Calendar - All months */}
+            <Calendar />
+          </Box>
         </Box>
-        
-        {/* Calendar - All months */}
-        <Calendar />
       </Container>
 
       {/* Workout Modal */}
