@@ -44,7 +44,7 @@ const ACTIVITY_TYPES = [
 ];
 
 export default function WorkoutModal() {
-  const { state, closeDayModal, updateWorkout, moveWorkout, undo, dispatch } = useApp();
+  const { state, closeDayModal, updateWorkout, moveWorkout, undo, createWorkout } = useApp();
   const theme = useTheme();
   const [notes, setNotes] = useState('');
   const [showAddActivity, setShowAddActivity] = useState(false);
@@ -108,37 +108,31 @@ export default function WorkoutModal() {
     const activityType = ACTIVITY_TYPES.find(t => t.id === newActivity.type);
     const title = `${activityType?.label || 'Activity'}`;
     
-    // Create new workout
-    const newWorkout = {
-      id: `custom-${Date.now()}`,
-      date: state.selectedDate,
-      title,
-      details: newActivity.notes || `Custom ${activityType?.label} activity`,
-      phase: 'Custom',
-      week: 0,
-      tags: [] as any[],
-      planned_distance_km: newActivity.distance ? parseFloat(newActivity.distance) : null,
-      planned_duration_min: newActivity.duration,
-      intensity: newActivity.type === 'strength' ? 'Strength' as const : 'E' as const,
-      status: 'planned' as const,
-      completed_at: null,
-      moved_from_date: null,
-      notes: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    
-    // Add to state (demo mode - localStorage)
-    const existingWorkouts = JSON.parse(localStorage.getItem('bosbeekse15_demo_workouts') || '[]');
-    existingWorkouts.push(newWorkout);
-    localStorage.setItem('bosbeekse15_demo_workouts', JSON.stringify(existingWorkouts));
-    
-    // Update state
-    dispatch({ type: 'SET_WORKOUTS', payload: existingWorkouts });
-    
-    // Reset form
-    setNewActivity({ type: 'run', duration: 30, distance: '', notes: '' });
-    setShowAddActivity(false);
+    try {
+      // Use the context's createWorkout function
+      await createWorkout({
+        date: state.selectedDate,
+        title,
+        details: newActivity.notes || `Custom ${activityType?.label} activity`,
+        phase: 'Custom',
+        week: 0,
+        tags: [],
+        planned_distance_km: newActivity.distance ? parseFloat(newActivity.distance) : null,
+        planned_duration_min: newActivity.duration || null,
+        intensity: newActivity.type === 'strength' ? 'Strength' : 'E',
+        status: 'planned',
+        completed_at: null,
+        moved_from_date: null,
+        notes: null,
+        activity_type: newActivity.type as any,
+      });
+      
+      // Reset form
+      setNewActivity({ type: 'run', duration: 30, distance: '', notes: '' });
+      setShowAddActivity(false);
+    } catch (error) {
+      console.error('Failed to add activity:', error);
+    }
   };
 
   const selectedActivityType = ACTIVITY_TYPES.find(t => t.id === newActivity.type);

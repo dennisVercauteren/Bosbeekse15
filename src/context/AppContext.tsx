@@ -27,6 +27,7 @@ type AppAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_WORKOUTS'; payload: WorkoutDay[] }
+  | { type: 'ADD_WORKOUT'; payload: WorkoutDay }
   | { type: 'UPDATE_WORKOUT'; payload: WorkoutDay }
   | { type: 'SET_CHECKINS'; payload: CheckIn[] }
   | { type: 'UPDATE_CHECKIN'; payload: CheckIn }
@@ -72,6 +73,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, error: action.payload };
     case 'SET_WORKOUTS':
       return { ...state, workouts: action.payload };
+    case 'ADD_WORKOUT':
+      return { ...state, workouts: [...state.workouts, action.payload] };
     case 'UPDATE_WORKOUT':
       return {
         ...state,
@@ -123,6 +126,7 @@ interface AppContextType {
   // Workout actions
   loadWorkouts: () => Promise<void>;
   initializePlan: () => Promise<void>;
+  createWorkout: (workout: Omit<WorkoutDay, 'id' | 'created_at' | 'updated_at'>) => Promise<WorkoutDay>;
   updateWorkout: (id: string, updates: Partial<WorkoutDay>) => Promise<void>;
   moveWorkout: (workoutId: string, newDate: string) => Promise<void>;
   markWorkoutStatus: (id: string, status: WorkoutDay['status']) => Promise<void>;
@@ -223,6 +227,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to initialize plan' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, [isDemo]);
+
+  // Create a new workout (for custom activities)
+  const createWorkout = useCallback(async (workoutData: Omit<WorkoutDay, 'id' | 'created_at' | 'updated_at'>): Promise<WorkoutDay> => {
+    try {
+      const now = new Date().toISOString();
+      let newWorkout: WorkoutDay;
+      
+      if (isDemo) {
+        // Generate a unique ID for demo mode
+        newWorkout = {
+          ...workoutData,
+          id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          created_at: now,
+          updated_at: now,
+        } as WorkoutDay;
+        
+        // Get existing workouts and add the new one
+        const workouts = getDemoWorkouts();
+        workouts.push(newWorkout);
+        saveDemoWorkouts(workouts);
+      } else {
+        // For Supabase, let the database generate the UUID
+        newWorkout = await workoutService.create(workoutData);
+      }
+      
+      dispatch({ type: 'ADD_WORKOUT', payload: newWorkout });
+      return newWorkout;
+    } catch (error) {
+      console.error('Failed to create workout:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to create workout' });
+      throw error;
     }
   }, [isDemo]);
 
@@ -485,6 +522,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch,
     loadWorkouts,
     initializePlan,
+    createWorkout,
     updateWorkout,
     moveWorkout,
     markWorkoutStatus,
