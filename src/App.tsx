@@ -15,6 +15,7 @@ import FilterBar from './components/FilterBar';
 import LoginScreen from './components/LoginScreen';
 import InitializePlan from './components/InitializePlan';
 import CheckInForm from './components/CheckInForm';
+import StatsDashboard from './components/StatsDashboard';
 import { generateICalFile, downloadFile } from './lib/utils';
 
 function AppContent() {
@@ -182,6 +183,9 @@ function AppContent() {
 
         {/* Daily Check-In */}
         <CheckInForm />
+        
+        {/* Stats Dashboard */}
+        <StatsDashboard />
         
         {/* Filter Bar */}
         <Box sx={{ mb: 3 }}>

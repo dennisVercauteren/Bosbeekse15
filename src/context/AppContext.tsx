@@ -271,23 +271,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       if (isDemo) {
         const workouts = getDemoWorkouts();
-        // Check if target date has a workout
-        const existing = workouts.find(w => w.date === newDate);
+        // Check if target date has a non-rest workout (rest days can be overwritten)
+        const existing = workouts.find(w => w.date === newDate && w.intensity !== 'Rest');
         if (existing) {
           throw new Error(`There's already a workout scheduled for ${newDate}`);
         }
+        // Remove any rest day on the target date
+        const filteredWorkouts = workouts.filter(w => !(w.date === newDate && w.intensity === 'Rest'));
         
-        const index = workouts.findIndex(w => w.id === workoutId);
+        const index = filteredWorkouts.findIndex(w => w.id === workoutId);
         if (index >= 0) {
           updated = {
-            ...workouts[index],
+            ...filteredWorkouts[index],
             date: newDate,
             moved_from_date: workout.date,
             status: 'rescheduled',
             updated_at: new Date().toISOString(),
           };
-          workouts[index] = updated;
-          saveDemoWorkouts(workouts);
+          filteredWorkouts[index] = updated;
+          saveDemoWorkouts(filteredWorkouts);
         } else {
           throw new Error('Workout not found');
         }

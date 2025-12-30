@@ -59,13 +59,15 @@ export default function CheckInForm() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveCheckIn({
-        id: todayCheckIn?.id || '',
+      // For new check-ins, generate a proper ID; for existing ones, use the existing ID
+      const checkInData = {
+        id: todayCheckIn?.id || `checkin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         date: today,
         ...formData,
         created_at: todayCheckIn?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      });
+      };
+      await saveCheckIn(checkInData);
     } catch (error) {
       console.error('Failed to save check-in:', error);
     } finally {
