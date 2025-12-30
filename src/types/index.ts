@@ -4,6 +4,9 @@ export type WorkoutStatus = 'planned' | 'completed' | 'skipped' | 'rescheduled';
 // Intensity levels
 export type Intensity = 'E' | 'S' | 'T' | 'I' | 'Rest' | 'Strength';
 
+// Activity types for custom activities
+export type ActivityType = 'run' | 'walk' | 'cycle' | 'swim' | 'padel' | 'squash' | 'strength' | 'rest';
+
 // Workout tags
 export type WorkoutTag = 
   | 'easy' 
@@ -34,6 +37,7 @@ export interface WorkoutDay {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  activity_type?: ActivityType; // Optional - for custom activity categorization
 }
 
 // For creating/updating workouts
@@ -49,6 +53,7 @@ export interface WorkoutDayInput {
   intensity: Intensity;
   status?: WorkoutStatus;
   notes?: string | null;
+  activity_type?: ActivityType;
 }
 
 // Check-in entity for daily tracking
