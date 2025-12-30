@@ -13,7 +13,7 @@ Write-Host ""
 Set-Location "D:\OneDrive\001. PROJECTEN\000. KUBUZ\Bosbeekse15"
 
 # Show current status
-Write-Host "[1/4] Checking for changes..." -ForegroundColor Yellow
+Write-Host "[1/5] Checking for changes..." -ForegroundColor Yellow
 git status --short
 Write-Host ""
 
@@ -34,30 +34,36 @@ if ([string]::IsNullOrWhiteSpace($message)) {
 
 # Add all changes
 Write-Host ""
-Write-Host "[2/4] Adding all changes..." -ForegroundColor Yellow
+Write-Host "[2/5] Adding all changes..." -ForegroundColor Yellow
 git add .
 
 # Commit
 Write-Host ""
-Write-Host "[3/4] Committing: $message" -ForegroundColor Yellow
+Write-Host "[3/5] Committing: $message" -ForegroundColor Yellow
 git commit -m $message
 
 # Push to GitHub
 Write-Host ""
-Write-Host "[4/4] Pushing to GitHub..." -ForegroundColor Yellow
+Write-Host "[4/5] Pushing to GitHub..." -ForegroundColor Yellow
 git push
 
+# Open Netlify deploy page
+Write-Host ""
+Write-Host "[5/5] Opening Netlify deploy status..." -ForegroundColor Yellow
+Start-Process "https://app.netlify.com/sites/bosbeekse15/deploys"
+
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "   Deploy complete!" -ForegroundColor Green
+Write-Host "   Deploy triggered!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Netlify will automatically build and deploy." -ForegroundColor White
+Write-Host "Netlify is now building and deploying your site." -ForegroundColor White
 Write-Host ""
-Write-Host "Check status: " -NoNewline
-Write-Host "https://app.netlify.com" -ForegroundColor Cyan
-Write-Host "Your site:    " -NoNewline
+Write-Host "Watch progress: " -NoNewline
+Write-Host "https://app.netlify.com/sites/bosbeekse15/deploys" -ForegroundColor Cyan
+Write-Host "Your site:      " -NoNewline
 Write-Host "https://bosbeekse15.kubuz.net" -ForegroundColor Cyan
 Write-Host ""
+Write-Host "Build takes about 1-2 minutes." -ForegroundColor Gray
+Write-Host ""
 Read-Host "Press Enter to exit"
-
